@@ -1,5 +1,5 @@
-import {CAMPAIGN_IDS} from './campaign.mjs?v=0.3.0';
-import {SWORDS,SWORD_IDS,SWORD_CHANCE_WITHIN_RARE} from './swords.mjs?v=0.3.0';
+import {CAMPAIGN_IDS} from './campaign.mjs?v=0.3.1';
+import {SWORDS,SWORD_IDS,SWORD_CHANCE_WITHIN_RARE} from './swords.mjs?v=0.3.1';
 export const LOOT_ODDS = Object.freeze({wood:[65,30,5],iron:[35,50,15],gold:[10,60,30]});
 export const LOOT = {
   trash:[{id:'sock',name:'One lonely sock',value:3},{id:'potato',name:'Questionable potato',value:2},{id:'rock',name:'“Legendary” rock',value:4},{id:'scrap',name:'Bent sword scrap',value:5}],

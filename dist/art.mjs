@@ -1,6 +1,6 @@
-import {SWORDS} from './swords.mjs?v=0.3.0';
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.3.0';
-import {SWORD_SWING,clamp} from './core.mjs?v=0.3.0';
+import {SWORDS} from './swords.mjs?v=0.3.1';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.3.1';
+import {SWORD_SWING,clamp} from './core.mjs?v=0.3.1';
 const P={'.':null,o:'#252830',h:'#634337',H:'#8d6550',s:'#e9bc92',S:'#f3d1a0',e:'#202a2c',a:'#e8debe',A:'#c4b48f',c:'#517a78',C:'#6e9b91',b:'#493e3e',B:'#695246',l:'#b9c3c0',L:'#e0dfce',g:'#8b8e99',G:'#5b6072',r:'#997150',R:'#c7a46b',v:'#a799c9',V:'#716a97',y:'#f1c674',Y:'#e9e0af'};
 const sprites={
   pip:[

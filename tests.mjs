@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.0';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.1';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.3.0';
-import {AdminTools} from './dist/admin.mjs?v=0.3.0';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.0';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.0';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.3.1';
+import {AdminTools} from './dist/admin.mjs?v=0.3.1';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.1';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.1';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -201,4 +201,8 @@ test('all sword ultimates need a full meter, retain separate themes and consume 
  const motifs=new Set();
  for(const skin of SWORD_IDS){const g=new Adventure();g.start();g.player.xp=12;g.inventory.push({id:skin,skin,name:SWORDS[skin].name,rarity:'rare',value:60});g.equipSword(skin);assert.equal(g.special(),false);step(g,5.6,{charge:true});assert.equal(g.player.ultimateCharge,100);assert.ok(g.special());assert.equal(g.player.ultimateCharge,0);assert.equal(g.specialScene.skin,skin);motifs.add(g.specialScene.theme.motif);step(g,2.7);assert.equal(g.mode,'playing');assert.equal(g.special(),false);}
  assert.ok(motifs.size>=9);
+});
+
+test('the hammer also supports its own charged ultimate',()=>{
+ const g=new Adventure();g.start();g.player.xp=12;g.player.weaponSkin='thunderhammer';g.player.ultimateCharge=100;assert.ok(g.special());assert.equal(g.specialScene.theme.title,'Tempest Judgement');assert.equal(g.player.ultimateCharge,0);
 });

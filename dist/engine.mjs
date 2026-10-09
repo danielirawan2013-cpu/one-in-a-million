@@ -1,9 +1,9 @@
-import {ULTIMATES} from './ultimates.mjs?v=0.3.0';
-import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.3.0';
-import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.3.0';
-import {SWORDS} from './swords.mjs?v=0.3.0';
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.3.0';
-import {makeArea,isSolid} from './world.mjs?v=0.3.0';
+import {ULTIMATES} from './ultimates.mjs?v=0.3.1';
+import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.3.1';
+import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.3.1';
+import {SWORDS} from './swords.mjs?v=0.3.1';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.3.1';
+import {makeArea,isSolid} from './world.mjs?v=0.3.1';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
@@ -149,7 +149,7 @@ export class Adventure{
     this.emit('ability',{kind:'lightning'});return true;
   }
   special({reducedMotion=false}={}){
-    const p=this.player;if(this.mode!=='playing'||p.specialCd||p.ultimateCharge<100||p.weaponSkin==='thunderhammer'&&!p.scrapKing)return false;
+    const p=this.player;if(this.mode!=='playing'||p.specialCd||p.ultimateCharge<100)return false;
     if(p.scrapKing?!p.specialUnlocked:!this.stage)return false;
     const skin=p.scrapKing?'scrap-king':p.weaponSkin??'normal',theme=ULTIMATES[skin];
     p.ultimateCharge=0;p.attackTime=0;p.parryTime=0;p.dodgeTime=0;p.attackHit=true;

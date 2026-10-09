@@ -1,11 +1,11 @@
-import {ULTIMATES} from './ultimates.mjs?v=0.3.0';
-import {EPISODES} from './campaign.mjs?v=0.3.0';
-import {SWORDS} from './swords.mjs?v=0.3.0';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.3.0';
-import {Adventure} from './engine.mjs?v=0.3.0';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.3.0';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.3.0';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.3.0';
+import {ULTIMATES} from './ultimates.mjs?v=0.3.1';
+import {EPISODES} from './campaign.mjs?v=0.3.1';
+import {SWORDS} from './swords.mjs?v=0.3.1';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.3.1';
+import {Adventure} from './engine.mjs?v=0.3.1';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.3.1';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.3.1';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.3.1';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -58,6 +58,7 @@ function updateUI(){
   const ultSkin=p.scrapKing?'scrap-king':p.weaponSkin??'normal',ult=ULTIMATES[ultSkin];
   $('special-action').hidden=false;$('special-action').disabled=game.mode!=='playing'||p.specialCd>0||p.ultimateCharge<100||p.scrapKing&&!p.specialUnlocked||!p.scrapKing&&(!stage||!ult);
   $('special-label').textContent=p.specialCd>0?'Ultimate · '+Math.ceil(p.specialCd)+'s':ult?.title??'Equip a sword';
+  $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing?'Unlock your first potential stage.':'Press V to unleash your ultimate.';
   $('ultimate-fill').style.width=p.ultimateCharge+'%';$('ultimate-charge').textContent=Math.floor(p.ultimateCharge)+' / 100';$('channel-action').disabled=game.mode!=='playing'||p.ultimateCharge>=100;
 
   const titles=['A sleeping spark','The first spark','A growing flame','A heart awakened'];
@@ -265,7 +266,8 @@ document.addEventListener('keydown',e=>{
   if(e.code==='KeyZ'&&!e.repeat&&!e.target.closest('input,select,textarea')){e.preventDefault();if(game.mode==='admin')closeAdmin();else openAdmin();return;}
   if(e.code==='Tab'&&overlay.children.length){const buttons=[...overlay.querySelectorAll('input:not(:disabled),select:not(:disabled),button:not(:disabled)')];const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}return;}
   if(e.code==='Escape'){e.preventDefault();if(game.mode==='inventory'){closeInventory();}else if(game.mode==='admin'){closeAdmin();}else if(game.mode==='help')overlay.querySelector('[data-action="help-close"]').click();else if(game.mode==='dialog'){game.mode='playing';closePanel();updateUI();}else pause();return;}
-  if(game.mode!=='playing'||e.target.closest('button'))return;
+  if(game.mode!=='playing'||e.target.closest('input,select,textarea'))return;
+  if(e.code==='Space'&&e.target.closest('button'))return;
   if(movement[e.code]){e.preventDefault();input[movement[e.code]]=true;}
   if(e.code==='KeyU'){e.preventDefault();input.charge=true;}
   if(e.code==='Space'){e.preventDefault();input.attack=true;game.attack();}

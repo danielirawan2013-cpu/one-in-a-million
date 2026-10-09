@@ -1,4 +1,5 @@
 export const ULTIMATES={
+  thunderhammer:{title:'Tempest Judgement',motif:'bolt',line:'The storm is in your hands.'},
   dawnblade:{title:'Daybreak Judgement',motif:'sun',line:'A dawn worth fighting for.'},
   moonfang:{title:'Lunar Judgement',motif:'moon',line:'The night remembers your name.'},
   emberfang:{title:'Inferno Judgement',motif:'flame',line:'A small spark. A roaring answer.'},

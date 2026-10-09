@@ -1,4 +1,4 @@
-import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.3.0';
+import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.3.1';
 export const TILE=16, COLS=44, ROWS=30, WIDTH=COLS*TILE, HEIGHT=ROWS*TILE;
 export const AREAS={
   hollow:{name:'Bramble Hollow',note:'Home, sweet slightly haunted home.',caption:'Find the practice armour. Even small swings count.',palette:['#29463c','#345344','#3f614b','#6c7650'],ground:'grass',spawn:{x:352,y:340},

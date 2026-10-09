@@ -6,8 +6,8 @@
   <meta name="description" content="A tiny human. A million-to-one gift. Explore a pixel dungeon, find unpredictable loot, and unlock your strength to save your monster family.">
   <title>One in a Million — Pip's adventure</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=0.2.0">
-  <script type="module" src="game.mjs?v=0.2.0"></script>
+  <link rel="stylesheet" href="style.css?v=0.3.0">
+  <script type="module" src="game.mjs?v=0.3.0"></script>
 </head>
 <body>
 <svg class="symbol-bank" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -24,21 +24,21 @@
   <header class="masthead">
     <a class="wordmark" href="./" aria-label="One in a Million home"><svg class="brand-spark" aria-hidden="true"><use href="#i-spark"/></svg><span>ONE IN A<br><b>MILLION</b></span></a>
     <p class="tagline">Small hero.<br><em>Impossible strength.</em></p>
-    <div class="header-actions"><button id="sound" class="quiet icon-button" aria-label="Turn sound on" aria-pressed="false"><svg><use href="#i-sound"/></svg><span id="sound-label">Sound off</span></button><button id="help" class="quiet">How to play</button><button id="pause" class="quiet icon-button" aria-label="Pause game"><svg><use href="#i-pause"/></svg></button></div>
+    <div class="header-actions"><button id="sound" class="quiet icon-button" aria-label="Turn sound on" aria-pressed="false"><svg><use href="#i-sound"/></svg><span id="sound-label">Sound off</span></button><button id="fullscreen" class="quiet icon-button" aria-label="Enter full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span id="fullscreen-label">Full screen</span></button><button id="inventory-toggle" class="quiet">Inventory</button><button id="admin" class="quiet">Admin</button><button id="help" class="quiet">How to play</button><button id="pause" class="quiet icon-button" aria-label="Pause game"><svg><use href="#i-pause"/></svg></button></div>
   </header>
   <main class="game-layout">
     <section class="play-area" aria-label="Dungeon adventure">
       <div class="location-bar"><div><span class="location-dot"></span><strong id="location">Bramble Hollow</strong><span id="location-note">Home, sweet slightly haunted home.</span></div><span id="chapter-label">Chapter one</span></div>
       <div class="viewport" id="viewport">
-        <canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E to interact, Q for power, Shift to dodge, H to heal."></canvas>
+        <canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E for inventory, G to interact, R for power, F to parry, Z for admin, V for your ultimate, U to charge, Shift to dodge, H to heal."></canvas>
         <div class="hud" aria-label="Player status"><div class="health"><svg><use href="#i-heart"/></svg><div class="health-track"><div id="health-fill"></div></div><span id="health-text">100 / 100</span></div><div class="money"><svg><use href="#i-coin"/></svg><span id="coins">0</span></div></div>
-        <div id="interact-hint" class="interaction" hidden><kbd>E</kbd><span></span></div>
+        <div id="interact-hint" class="interaction" hidden><kbd>G</kbd><span></span></div>
         <div id="toast" class="loot-toast" role="status" hidden></div>
         <div id="overlay" class="scene-overlay"></div>
         <div class="scene-caption" id="scene-caption">Some heroes start smaller than others.</div>
       </div>
-      <div class="action-strip"><span><kbd>W A S D</kbd> Move</span><span><kbd>SPACE</kbd> Attack</span><span><kbd>E</kbd> Interact</span><span><kbd>SHIFT</kbd> Dodge</span><button id="power-action" disabled><svg><use href="#i-spark"/></svg><kbd>Q</kbd><span id="power-label">Power sleeping</span></button><button id="heal-action"><svg><use href="#i-potion"/></svg><kbd>H</kbd><span id="potion-label">3 potions</span></button></div>
-      <div class="touch-controls" aria-label="Touch controls"><div class="dpad"><button data-move="up" aria-label="Move up"><svg><use href="#i-arrow"/></svg></button><button data-move="left" aria-label="Move left"><svg><use href="#i-arrow"/></svg></button><button data-move="down" aria-label="Move down"><svg><use href="#i-arrow"/></svg></button><button data-move="right" aria-label="Move right"><svg><use href="#i-arrow"/></svg></button></div><div class="touch-actions"><button id="touch-dodge">Dodge</button><button id="touch-interact">Use</button><button id="touch-attack" class="attack-button"><svg><use href="#i-sword"/></svg>Attack</button></div></div>
+      <nav class="ability-bar" aria-label="Abilities and keyboard shortcuts"><button id="parry-action"><kbd>F</kbd><span>Parry</span></button><button id="sweep-action"><kbd>J</kbd><span>Sweep · unlock 1</span></button><button id="guard-action"><kbd>K</kbd><span>Guard · unlock 2</span></button><button id="charge-action"><kbd>L</kbd><span>Rush · unlock 3</span></button><button id="mend-action"><kbd>C</kbd><span>Mending Light · unlock 1</span></button><button id="cyclone-action"><kbd>X</kbd><span>Cyclone · unlock 2</span></button><button id="stars-action"><kbd>B</kbd><span>Starcall · unlock 3</span></button><button id="lightning-action"><kbd>T</kbd><span>Lightning · hammer</span></button><button id="special-action" hidden><svg><use href="#i-sword"/></svg><kbd>V</kbd><span id="special-label">King’s Verdict</span></button><button id="power-action" disabled><svg><use href="#i-spark"/></svg><kbd>R</kbd><span id="power-label">Power sleeping</span></button><button id="heal-action"><svg><use href="#i-potion"/></svg><kbd>H</kbd><span id="potion-label">3 potions</span></button><div class="ultimate-meter"><div><strong>Ultimate</strong><span id="ultimate-charge">0 / 100</span></div><div class="ultimate-track"><span id="ultimate-fill"></span></div><button id="channel-action"><kbd>U</kbd><span>Hold to charge</span></button></div></nav><div class="action-strip"><span><kbd>W A S D</kbd> Move</span><span><kbd>SPACE</kbd> Attack</span><span><kbd>G</kbd> Interact</span><span><kbd>SHIFT</kbd> Dodge</span><span><kbd>F</kbd> Parry</span><span><kbd>Z</kbd> Admin</span></div>
+      <div class="touch-controls" aria-label="Touch controls"><div class="dpad"><button data-move="up" aria-label="Move up"><svg><use href="#i-arrow"/></svg></button><button data-move="left" aria-label="Move left"><svg><use href="#i-arrow"/></svg></button><button data-move="down" aria-label="Move down"><svg><use href="#i-arrow"/></svg></button><button data-move="right" aria-label="Move right"><svg><use href="#i-arrow"/></svg></button></div><div class="touch-actions"><button id="touch-dodge">Dodge</button><button id="touch-parry">Parry</button><button id="touch-interact">Use</button><button id="touch-attack" class="attack-button"><svg><use href="#i-sword"/></svg>Attack</button></div></div>
       <p class="save-note" id="save-note">Your adventure saves on this device. Take your time.</p>
     </section>
     <aside class="journal" aria-label="Quest and inventory">
@@ -49,8 +49,9 @@
       <section class="field-note"><h2>A note to self</h2><p id="field-note">“If I don’t come back, someone please water Grandma’s gold.”</p></section>
     </aside>
   </main>
-  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Three playable chapters · v0.2</span></footer>
+  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Eight playable chapters · v0.3</span></footer>
 </div>
 <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+
 </body>
 </html>

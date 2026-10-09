@@ -20,25 +20,45 @@ Open http://localhost:5173. Opening `index.html` directly with `file://` will no
 | --- | --- |
 | Move | WASD or arrows |
 | Attack | Space (hold for repeated swings) |
-| Interact | E |
+| Inventory / change weapon | E |
+| Interact | G |
 | Dodge | Shift |
-| Heart burst | Q, after the first unlock |
+| Parry | F |
+| Heart burst | R, after the first unlock |
+| Admin panel | Z |
+| Sword ultimate | V, with a full ultimate meter |
+| Charge ultimate | Hold U while standing still |
+| Sweep / Guard / Rush | J / K / L |
+| Mending Light / Cyclone / Starcall | C / X / B |
+| Hammer lightning | T |
 | Heal | H |
 | Pause | Escape |
 
 Touch movement and action buttons appear on small screens. Sound is optional. Progress saves in local browser storage; it does not sync between devices.
 
-## Three playable chapters
+## Eight playable chapters
 
 1. Rescue Uncle Bones from the old crypt and bring him home.
 2. Rowan, Pip’s knight friend and regular shop customer, takes a royal dragon bounty to pay for her own family’s medicine. Reach the family archive and find Pip’s portrait.
 3. Before Rowan attacks Grandma, Pip stops her sword with his hidden strength and reveals that the monsters raised him. The two fight together against the royal official who invented the bounty to steal Grandma’s treasure.
 
+4. Follow the collector’s stolen treasure into the workyard and foundry.
+5. Help Silk repair the forest wards and find the people left behind.
+6. Help Rowan rescue travellers and restore the coastal beacon.
+7. Discover the origin of Pip’s gift in the star vault.
+8. Save the dungeon heart and return home together.
+
 Silk runs the family shop, Uncle Bones has bad knees, and Grandma’s treasure includes birthday presents. Pip remains a small human in his oversized apron throughout.
 
-- Six regions with enemies, bosses and wooden, iron and golden chests. Trash / useful / rare odds: 65/30/5, 35/50/15 and 10/60/30.
-- Rare equipment equips automatically. Sell junk and buy healing potions at Silk’s shop.
+- Seventeen regions including a walkable family shop, with enemies, bosses and wooden, iron and golden chests. Trash / useful / rare odds: 65/30/5, 35/50/15 and 10/60/30.
+- Eleven named sword skins are obtainable: any sword drops at 0.15% from wood, 0.45% from iron, and 0.9% from gold. Scrap King is admin exclusive. Equip owned swords in the inventory. Sell junk, buy potions, and open 50-coin mystery chests inside Silk’s shop.
 - Sword attacks have a brief wind-up, a forward strike, and recovery. Damage lands once in front; dodging cancels a swing. Enemies telegraph their attacks and lock their direction.
+- Parry a forward strike just before impact to stagger enemies and strengthen your next swing. Sword sparks, dodge trails, parry flashes and power effects support reduced motion.
+- Admin password: **3275**. Equip Scrap King (999 damage), heal, add coins, unlock potential, give any item, and unlock **King’s Verdict**. King’s Verdict is Scrap King’s exclusive ultimate. Fill the meter in Admin or hold U. Each normal sword has its own themed ultimate cutscene, unlocked with the first potential stage; all ultimates spend a full meter and have a 12-second cooldown. These are local single-player cheats; the password is visible in public source and does not protect accounts or a server.
+- Six additional abilities unlock in pairs at potential levels 1, 2, and 3. The ability bar below the game shows keys, unlocks and cooldowns.
+- After rescuing Uncle Bones, swing toward the lake from its right bank to summon the Lake Tempest. Dodge its telegraphed lightning; defeating it guarantees Thunderwake hammer. T summons lightning while the hammer is equipped. A full satchel leaves the reward in a chest.
+- Use the Full screen header button to expand the game where the browser supports fullscreen.
+- Replay the extended expedition to hunt rare swords while keeping your loot.
 - All chapters are winnable without rare equipment. Death keeps loot and progression.
 - Original chapter-one saves continue into chapter two with equipment and unlocked strength intact. Choose **Continue adventure** after refreshing.
 
@@ -66,4 +86,4 @@ The included workflow tests the game and deploys `dist/`. In the repository's **
 
 Pixel art, map layouts, story, and sounds are authored for this project. Silkscreen by Jason Kottke is bundled under the SIL Open Font License; see `dist/assets/OFL.txt`.
 
-Version 0.2 includes the planned family-and-knight story across three playable chapters.
+Version 0.3 preserves the planned family-and-knight story, expands it to eight chapters, and adds sword skins, the shop interior, parry, effects, and local admin tools.

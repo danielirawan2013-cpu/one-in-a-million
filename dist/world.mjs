@@ -1,10 +1,12 @@
+import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.3.0';
 export const TILE=16, COLS=44, ROWS=30, WIDTH=COLS*TILE, HEIGHT=ROWS*TILE;
 export const AREAS={
   hollow:{name:'Bramble Hollow',note:'Home, sweet slightly haunted home.',caption:'Find the practice armour. Even small swings count.',palette:['#29463c','#345344','#3f614b','#6c7650'],ground:'grass',spawn:{x:352,y:340},
-    exits:[{id:'north',x:352,y:64,to:'moss',spawn:{x:352,y:417},label:'Enter the mossway'},{id:'east',x:466,y:387,to:'thorn',spawn:{x:352,y:415},requires:'returned',label:'Take the old dungeon road'}],
+    exits:[{id:'shop-door',x:247,y:271,to:'shop',spawn:{x:352,y:398},label:'Enter the family shop'},{id:'north',x:352,y:64,to:'moss',spawn:{x:352,y:417},label:'Enter the mossway'},{id:'east',x:466,y:387,to:'thorn',spawn:{x:352,y:415},requires:'returned',label:'Take the old dungeon road'}],
     chests:[{id:'hollow-wood',type:'wood',x:255,y:341},{id:'hollow-iron',type:'iron',x:455,y:218}],
     enemies:[{id:'practice',kind:'practice',x:382,y:268,hp:20,damage:4,xp:12,coins:6,name:'Wayward practice armour'}],
-    npcs:[{id:'shop',kind:'spider',x:271,y:284,label:'Visit the family shop'},{id:'customer',kind:'knight',x:342,y:324,label:'Talk to Rowan, your regular customer'}]},
+    npcs:[{id:'customer',kind:'knight',x:342,y:324,label:'Talk to Rowan, your regular customer'}]},
+  shop:{name:'The Family Shop',note:'Tea, treasure, and questionable potatoes.',caption:'Talk to Silk at the counter to sell junk and buy potions.',palette:['#76583f','#806045','#8b684b','#ab8158'],ground:'wood',spawn:{x:352,y:398},exits:[{id:'south',x:352,y:433,to:'hollow',spawn:{x:247,y:283},label:'Leave the family shop'}],chests:[],enemies:[],npcs:[{id:'shop',kind:'spider',x:352,y:215,label:'Talk to Silk at the counter'}]},
   moss:{name:'The Mossway',note:'Someone really ought to weed this place.',caption:'Clear the enchanted guards to open the crypt.',palette:['#263d38','#304b3f','#3c5649','#69794e'],ground:'grass',spawn:{x:352,y:418},
     exits:[{id:'south',x:352,y:441,to:'hollow',spawn:{x:352,y:92},label:'Return to the hollow'},{id:'north',x:352,y:49,to:'crypt',spawn:{x:352,y:415},label:'Enter the old crypt'}],
     chests:[{id:'moss-wood',type:'wood',x:226,y:325},{id:'moss-iron',type:'iron',x:453,y:163}],
@@ -31,9 +33,13 @@ export const AREAS={
 };
 export function noise(x,y,seed=0){const v=Math.sin(x*127.1+y*311.7+seed*51.3)*43758.5453;return v-Math.floor(v);}
 export function makeArea(id){
-  const definition=AREAS[id];
+  const definition=AREAS[id]??campaignArea(CAMPAIGN_IDS.indexOf(id)+1);
   const objects=[];
-  if(definition.ground!=='stone'){
+  if(id==='shop'){
+    objects.push({kind:'counter',x:295,y:218,w:114,h:20,solid:true});
+    for(const x of [190,454])for(const y of [110,290])objects.push({kind:'shelf',x,y,w:60,h:42,solid:true});
+    objects.push({kind:'lantern',x:282,y:212,solid:false},{kind:'lantern',x:422,y:212,solid:false},{kind:'family-frame',x:352,y:108,solid:false});
+  }else if(definition.ground==='grass'){
     for(let y=2;y<28;y+=3)for(let x=1;x<43;x+=3){
       if(x>11&&x<32)continue;
       if(id==='hollow'&&x<13&&y<11)continue;
@@ -64,7 +70,7 @@ export function makeArea(id){
 }
 export function isSolid(area,x,y){
   if(x<24||x>WIDTH-24||y<24||y>HEIGHT-24)return true;
-  if(area.ground==='stone'&&(x<158||x>546||y<39))return true;
+  if(area.ground!=='grass'&&(x<158||x>546||y<39))return true;
   if(area.id==='hollow'&&x>46&&x<169&&y>227&&y<389)return true;
-  return area.objects.some(o=>o.solid&&(o.kind==='house'?x>o.x-4&&x<o.x+o.w+4&&y>o.y-8&&y<o.y+o.h:Math.abs(x-o.x)<o.r&&Math.abs(y-o.y)<o.r*.65));
+  return area.objects.some(o=>o.solid&&(o.kind==='counter'||o.kind==='shelf'?x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h:o.kind==='house'?x>o.x-4&&x<o.x+o.w+4&&y>o.y-8&&y<o.y+o.h:Math.abs(x-o.x)<o.r&&Math.abs(y-o.y)<o.r*.65));
 }

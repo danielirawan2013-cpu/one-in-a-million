@@ -11,7 +11,7 @@ Delegated by user: static HTML/CSS/JavaScript with a Canvas 2D game. GitHub-comp
 The user wants to create and play their first pixel adventure game.
 
 ## Product Purpose
-A playable three-chapter story about a human shopkeeper who looks weak but has one-in-a-million dormant strength. Rescuing his adopted monster family unlocks his potential.
+A playable eight-chapter story about a human shopkeeper who looks weak but has one-in-a-million dormant strength. Rescuing his adopted monster family unlocks his potential.
 
 ## Capabilities and Constraints
 Top-down exploration chosen by implementer at user's request. Keyboard and touch movement, combat, loot chests with rare and trash drops, earned power progression, family dialogue, and a complete story ending. The protagonist is human, not a goblin. Funny with heart. User wants source uploaded on GitHub. Pixel art is drawn directly in code at user's request.
@@ -30,3 +30,9 @@ Pip is a small human raised by Uncle Bones (a skeleton with bad knees), Silk (a 
 
 ## Save Compatibility
 Chapter-one saves remain valid and continue into chapter two. Preserve existing loot, defeated enemies, coins and unlocked strength. The local storage key stays unchanged.
+
+## Version 0.3
+Seventeen regions, a walkable family shop, eleven very rare normal swords, parry, and reduced-motion effects. Local admin tools use Z and password 3275, can grant any item, and unlock Scrap King plus its exclusive V cutscene. R uses heart burst. Existing chapter-one and chapter-three saves keep progress and continue into the extended story.
+
+## Combat Expansion
+E opens weapon inventory; G interacts. Six unlockable abilities appear below the game view with keys and cooldowns. Hold U or fight to fill the ultimate meter, then V plays the equipped sword’s themed cutscene. Rescue Bones, then swing toward the lake from its right bank to summon the Lake Tempest and earn Thunderwake hammer; T calls lightning. Full screen is available through the header.

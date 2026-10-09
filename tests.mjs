@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.2.0';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.0';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.2.0';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.3.0';
+import {AdminTools} from './dist/admin.mjs?v=0.3.0';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.0';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.0';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -19,7 +22,7 @@ test('chest rarity boundaries match all three agreed loot tables',()=>{
   for(const [type,[trash,useful,rare]] of Object.entries(LOOT_ODDS)){
     assert.equal(trash+useful+rare,100);
     for(const [r,expected] of [[0,'trash'],[(trash-.01)/100,'trash'],[trash/100,'useful'],[(trash+useful-.01)/100,'useful'],[(trash+useful)/100,'rare'],[.9999,'rare']]){
-      const values=[r,0];assert.equal(rollLoot(type,()=>values.shift()).rarity,expected,type+' at '+r);
+      const values=[r,.5,0];assert.equal(rollLoot(type,()=>values.shift()??.5).rarity,expected,type+' at '+r);
     }
   }
 });
@@ -36,8 +39,8 @@ test('chests open once, and junk converts into coins at the shop',()=>{
   assert.equal(g.sellJunk(),3);assert.equal(g.player.coins,3);assert.equal(g.inventory.length,0);
 });
 test('rare loot equips automatically, without stacking duplicate bonuses',()=>{
-  const seq=[.99,0];const g=new Adventure({random:()=>seq.shift()??.5});g.start();const c=g.area.chests[0];g.player.x=c.x;g.player.y=c.y;g.interact();
-  assert.equal(g.player.weapon,12);assert.equal(g.inventory[0].rarity,'rare');assert.equal(g.stage,0);
+  const seq=[.99,.5,0];const g=new Adventure({random:()=>seq.shift()??.5});g.start();const c=g.area.chests[0];g.player.x=c.x;g.player.y=c.y;g.interact();
+  assert.equal(g.player.boots,true);assert.equal(g.inventory[0].rarity,'rare');assert.equal(g.stage,0);assert.equal(g.player.weapon,5);
 });
 test('all three chapters follow the family, customer, bounty, reveal and team-up story without rare loot',()=>{
   const events=[];const g=new Adventure({random:()=>0,onEvent:e=>events.push(e)});g.start();
@@ -73,7 +76,7 @@ test('all three chapters follow the family, customer, bounty, reveal and team-up
   assert.ok(events.some(e=>e.type==='unlock'));assert.ok(events.some(e=>e.type==='complete'));assert.equal(g.inventory.length,0);assert.equal(g.player.weapon,5);
 });
 test('all region exits and spawns are walkable',()=>{
-  const g=new Adventure();for(const id of Object.keys(AREAS)){g.loadArea(id,null);assert.equal(isSolid(g.area,g.area.spawn.x,g.area.spawn.y),false,id);for(const e of g.area.exits)assert.equal(isSolid(g.area,e.x,e.y),false,id+' '+e.id);for(const o of [...g.area.npcs,...g.area.chests])assert.equal(isSolid(g.area,o.x,o.y),false,id+' '+o.id);}
+  const g=new Adventure();for(const id of [...Object.keys(AREAS),...CAMPAIGN_IDS]){g.loadArea(id,null);assert.equal(isSolid(g.area,g.area.spawn.x,g.area.spawn.y),false,id);for(const e of g.area.exits)assert.equal(isSolid(g.area,e.x,e.y),false,id+' '+e.id);for(const o of [...g.area.npcs,...g.area.chests])assert.equal(isSolid(g.area,o.x,o.y),false,id+' '+o.id);}
 });
 test('save and restore preserve loot, cleared foes, power and chapter completion',()=>{
   const g=new Adventure();g.start();g.player.xp=80;g.player.weapon=12;g.player.boots=true;g.player.coins=25;g.defeated.add('warden');g.rescued=true;g.returnHome();
@@ -108,4 +111,94 @@ test('final chapter saves preserve the reveal, ally and ending',()=>{
 });
 test('potions only consume when injured, and purchases require coins',()=>{
   const g=new Adventure();g.start();assert.equal(g.heal(),false);assert.equal(g.player.potions,3);g.player.hp=30;assert.ok(g.heal());assert.equal(g.player.hp,70);assert.equal(g.player.potions,2);assert.equal(g.buyPotion(),false);g.player.coins=8;assert.ok(g.buyPotion());assert.equal(g.player.coins,0);assert.equal(g.player.potions,3);
+});
+
+test('admin password gates tools, Scrap King never replaces the saved normal weapon',()=>{
+  const admin=new AdminTools(),g=new Adventure();g.start();g.player.weapon=12;
+  assert.equal(admin.run('equip',g),false);assert.equal(admin.unlock('1234'),false);assert.equal(admin.unlock('3275 '),false);assert.equal(admin.unlock('3275'),true);
+  assert.equal(admin.run('equip',g),true);assert.equal(g.attackDamage,999);assert.equal(g.player.weapon,12);
+  const restored=new Adventure();assert.ok(restored.restore(g.snapshot()));assert.equal(restored.attackDamage,999);
+  admin.run('unequip',restored);assert.equal(restored.player.weapon,12);assert.equal(restored.attackDamage,12);
+  admin.lock();assert.equal(admin.run('coins',g),false);assert.equal(g.player.coins,0);
+  admin.unlock('3275');g.player.hp=17;admin.run('heal',g);assert.equal(g.player.hp,100);admin.run('potential',g);assert.equal(g.stage,3);admin.run('coins',g);assert.equal(g.player.coins,100);
+});
+test('every regular sword can drop at very rare odds; Scrap King is excluded',()=>{
+  assert.equal(SWORD_IDS.length,11);assert.equal(SWORD_IDS.includes('scrap-king'),false);
+  for(let i=0;i<SWORD_IDS.length;i++){
+    const values=[.99,.02,(i+.1)/SWORD_IDS.length];const item=rollLoot('gold',()=>values.shift()??.5);
+    assert.equal(item.skin,SWORD_IDS[i]);assert.equal(item.name,SWORDS[item.skin].name);
+  }
+  const values=[.99,.03,0];assert.equal(rollLoot('gold',()=>values.shift()??.5).skin,undefined,'3% boundary is excluded');
+  const g=new Adventure({random:(()=>{const v=[.99,0,0];return()=>v.shift()??.5;})()});g.start();interactAt(g,g.area.chests[0]);assert.equal(g.player.weaponSkin,'dawnblade');assert.equal(g.attackDamage,18);assert.equal(g.equipSword('voidbreaker'),false,'unowned swords cannot be equipped');
+});
+test('enter and leave the actual family shop and trade with Silk at its counter',()=>{
+  const g=new Adventure();g.start();const door=g.area.exits.find(e=>e.id==='shop-door');assert.ok(interactAt(g,door));assert.equal(g.area.id,'shop');assert.equal(g.area.enemies.length,0);
+  g.player.x=352;g.player.y=245;assert.equal(isSolid(g.area,g.player.x,g.player.y),false);assert.ok(g.interact());assert.equal(g.mode,'dialog');
+  g.player.coins=50;assert.ok(g.buyMysteryChest());assert.equal(g.player.coins>=0,true);assert.equal(g.inventory.length,1);
+  const copy=new Adventure();assert.ok(copy.restore(g.snapshot()));assert.equal(copy.area.id,'shop');copy.mode='playing';assert.ok(interactAt(copy,copy.area.exits[0]));assert.equal(copy.area.id,'hollow');assert.equal(isSolid(copy.area,copy.player.x,copy.player.y),false);
+});
+test('parry blocks a timed forward strike, staggers enemies and enables a counterattack',()=>{
+  const g=new Adventure();g.start();const e=g.area.enemies[0];g.player.x=e.x;g.player.y=e.y+20;g.player.facing={x:0,y:-1};g.player.invulnerable=0;e.windup=.05;e.attackFacing={x:0,y:1};
+  assert.ok(g.parry());assert.equal(g.parry(),false);step(g,.08);assert.equal(g.player.hp,100);assert.ok(e.stun>.9);assert.ok(g.player.riposteTime);assert.ok(g.effects.some(e=>e.kind==='parry'));
+  const hp=e.hp;g.player.x=e.x;g.player.y=e.y+20;assert.ok(g.attack());step(g,.14);assert.ok(hp-e.hp>g.attackDamage);assert.equal(g.player.riposteTime,0);
+});
+test('a mistimed or backwards parry does not block, and dodge cancels a parry',()=>{
+  const g=new Adventure();g.start();const e=g.area.enemies[0];g.player.x=e.x;g.player.y=e.y+20;g.player.facing={x:0,y:1};g.player.invulnerable=0;e.windup=.05;e.attackFacing={x:0,y:1};g.parry();step(g,.08);assert.equal(g.player.hp,96);
+  step(g,.8);g.player.facing={x:0,y:-1};g.parry();g.dodge();assert.equal(g.player.parryTime,0);
+});
+test('the extended story reaches all eight chapters and can be replayed with swords intact',()=>{
+  const events=[],g=new Adventure({onEvent:e=>events.push(e),random:()=>.5});g.start();g.player.xp=80;g.storyDone=true;g.truthRevealed=true;g.returned=true;g.knightMet=true;g.familyProof=true;
+  assert.ok(g.beginCampaign());
+  for(let i=0;i<EPISODES.length;i++){
+    g.mode='playing';assert.equal(g.area.id,EPISODES[i].id);assert.equal(g.chapter,4+Math.floor(i/2));assert.equal(g.advanceCampaign(),false,'must read chapter checkpoint');
+    for(const e of g.area.enemies)beat(g,e);
+    assert.ok(interactAt(g,g.area.npcs.find(n=>n.id==='campaign-lore')));
+    const restored=new Adventure();assert.ok(restored.restore(g.snapshot()));assert.equal(restored.campaignStep,i+1);
+    assert.ok(g.advanceCampaign());
+  }
+  assert.ok(g.campaignDone);assert.equal(g.chapter,8);assert.equal(g.area.id,'hollow');assert.equal(g.mode,'complete');assert.ok(events.some(e=>e.type==='campaign-complete'));
+  g.inventory.push({id:'starfall',skin:'starfall',name:'Starfall',value:60,rarity:'rare'});g.equipSword('starfall');g.opened.add('heartcore-gold');
+  assert.ok(g.replayCampaign());assert.equal(g.player.weaponSkin,'starfall');assert.equal(g.inventory.length,1);assert.equal(g.campaignDone,false);assert.equal(g.opened.has('heartcore-gold'),false);assert.equal(g.area.id,'workyard');
+});
+
+test('admin item picker grants every item and validates quantities without partial changes',()=>{
+  const admin=new AdminTools(),g=new Adventure();g.start();assert.equal(admin.grant('starfall',1,g),false);admin.unlock('3275');
+  assert.ok(admin.grant('starfall',1,g));assert.equal(g.player.weaponSkin,'starfall');assert.equal(g.inventory[0].skin,'starfall');
+  assert.ok(admin.grant('potion',3,g));assert.equal(g.player.potions,6);assert.ok(admin.grant('coins',2,g));assert.equal(g.player.coins,24);assert.ok(admin.grant('scrap-king',1,g));assert.ok(g.player.scrapKing);
+  const before=JSON.stringify(g.snapshot());for(const [id,qty] of [['missing',1],['coins',0],['coins',-1],['coins',100],['coins',1.5],['coins',NaN]])assert.equal(admin.grant(id,qty,g),false);
+  assert.equal(JSON.stringify(g.snapshot()),before);const restored=new Adventure();assert.ok(restored.restore(g.snapshot()));assert.equal(restored.player.weaponSkin,'starfall');assert.ok(restored.player.scrapKing);
+});
+test('King’s Verdict requires an admin unlock and Scrap King, plays before impact, and keeps story gates',()=>{
+  const events=[],g=new Adventure({onEvent:e=>events.push(e)});g.start();const admin=new AdminTools();assert.equal(g.special(),false);admin.unlock('3275');admin.run('special',g);assert.equal(g.special(),false,'ordinary swords cannot use the move');admin.run('equip',g);assert.ok(g.special());assert.equal(g.mode,'special');assert.equal(g.attack(),false);
+  const target=g.area.enemies[0];step(g,1);assert.equal(target.hp,target.maxHp,'damage waits for cutscene impact');step(g,1.7);assert.ok(target.dead);assert.equal(g.mode,'playing');assert.ok(g.player.specialCd>0);assert.equal(g.special(),false,'special has a cooldown');assert.ok(events.some(e=>e.type==='special-start'));assert.ok(events.some(e=>e.type==='special-end'));
+  g.loadArea('ember',{x:352,y:240});g.player.specialCd=0;g.player.ultimateCharge=100;assert.ok(g.special({reducedMotion:true}));step(g,.7);assert.equal(g.area.enemies.find(e=>e.id==='collector').hp,300,'does not bypass Grandma’s reveal');assert.equal(g.mode,'playing');assert.ok(g.snapshot().player.specialUnlocked);
+});
+
+test('full satchels preserve chest loot and coins, and malformed sword saves are rejected',()=>{
+  const g=new Adventure();g.start();g.inventory=Array.from({length:200},()=>({id:'sock',name:'Old sock',rarity:'trash',value:1}));g.player.coins=100;
+  assert.equal(g.buyMysteryChest(),false);assert.equal(g.player.coins,100);assert.equal(interactAt(g,g.area.chests[0]),false);assert.equal(g.area.chests[0].opened,false);assert.ok(validSave(g.snapshot()));
+  const s=g.snapshot();s.inventory=[{id:'starfall',skin:'missing',name:'Sword',rarity:'rare',value:60}];assert.equal(validSave(s),false);s.inventory[0].skin='starfall';assert.equal(validSave(s),true);
+});
+
+test('the lake boss requires Bones, a lake-facing swing, restores correctly and awards the hammer',()=>{
+ const g=new Adventure();g.start();g.player.x=185;g.player.y=350;g.player.facing={x:-1,y:0};g.attack();step(g,.5);assert.equal(g.defeated.has('storm-summoned'),false);
+ g.rescued=true;g.player.facing={x:1,y:0};g.attack();step(g,.5);assert.equal(g.defeated.has('storm-summoned'),false);
+ g.player.facing={x:-1,y:0};g.attack();step(g,.5);assert.ok(g.defeated.has('storm-summoned'));assert.equal(g.area.enemies.filter(e=>e.id==='lake-storm').length,1);
+ const r=new Adventure();assert.ok(r.restore(g.snapshot()));assert.ok(r.area.enemies.some(e=>e.id==='lake-storm'&&!e.dead));r.player.xp=80;beat(r,r.area.enemies.find(e=>e.id==='lake-storm'));assert.equal(r.player.weaponSkin,'thunderhammer');assert.ok(r.inventory.some(i=>i.id==='thunderhammer'));assert.ok(r.opened.has('storm-hammer'));assert.ok(r.lightning());assert.equal(r.lightning(),false);
+ const after=new Adventure();assert.ok(after.restore(r.snapshot()));assert.ok(after.area.enemies.find(e=>e.id==='lake-storm').dead);assert.equal(after.area.chests.some(c=>c.id==='storm-hammer'),false);
+});
+test('boss lightning is telegraphed, hurts only on impact and can be dodged',()=>{
+ const g=new Adventure();g.start();g.rescued=true;g.defeated.add('storm-summoned');g.loadArea('hollow',{x:220,y:375});g.player.invulnerable=0;const e=g.area.enemies.find(e=>e.id==='lake-storm');e.stormCd=0;step(g,.01);assert.ok(e.stormCast);assert.equal(g.player.hp,100);
+ g.player.x=300;g.player.y=400;step(g,.9);assert.equal(g.player.hp,100);assert.ok(g.effects.some(e=>e.kind==='lightning'));
+});
+test('six abilities unlock with potential and enforce their cooldowns',()=>{
+ const g=new Adventure();g.start();for(const k of ['sweep','guard','charge','mend','cyclone','stars'])assert.equal(g.ability(k),false);
+ g.player.xp=12;g.player.hp=50;assert.ok(g.ability('mend'));assert.equal(g.player.hp,70);assert.equal(g.ability('mend'),false);assert.ok(g.ability('sweep'));assert.equal(g.ability('guard'),false);
+ g.player.xp=38;assert.ok(g.ability('guard'));assert.equal(g.player.guardTime,3);assert.ok(g.ability('cyclone'));assert.equal(g.ability('stars'),false);
+ g.player.xp=80;assert.ok(g.ability('charge'));assert.ok(g.ability('stars'));assert.ok(validSave(g.snapshot()));
+});
+test('all sword ultimates need a full meter, retain separate themes and consume charge',()=>{
+ const motifs=new Set();
+ for(const skin of SWORD_IDS){const g=new Adventure();g.start();g.player.xp=12;g.inventory.push({id:skin,skin,name:SWORDS[skin].name,rarity:'rare',value:60});g.equipSword(skin);assert.equal(g.special(),false);step(g,5.6,{charge:true});assert.equal(g.player.ultimateCharge,100);assert.ok(g.special());assert.equal(g.player.ultimateCharge,0);assert.equal(g.specialScene.skin,skin);motifs.add(g.specialScene.theme.motif);step(g,2.7);assert.equal(g.mode,'playing');assert.equal(g.special(),false);}
+ assert.ok(motifs.size>=9);
 });

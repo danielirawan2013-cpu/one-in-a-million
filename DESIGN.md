@@ -163,3 +163,9 @@ The world and journal use square forms. The viewport has a framed border (4px de
 
 ## Combat Motion
 A short wind-up leads into an eased forward sword strike, then recovery. The hand, grip and blade remain connected to Pip’s directional sprite; upward swings render behind his body. Enemies show a forward warning before swinging in a locked direction. Contact produces brief knockback and a hit flash. Dodge cancels a swing. Reduced motion removes the blade trail and camera shake while retaining readable attack timing.
+
+## Expanded adventure surfaces
+The family-shop interior uses warm wooden floorboards, a woven rug, shelves, and Silk’s counter. Admin tools share parchment dialogue styling with labelled native fields and scrolling. Z toggles Admin; F parries, R uses heart burst. Scrap King’s V special pauses gameplay for copper fragments, a raised sword and cinematic letterboxing, shortened with reduced motion. Eleven named swords retain crisp PNG pixels in hands and inventory.
+
+## Ability Dock and Weapon Effects
+A framed ability dock sits directly below the Canvas, with keys, cooldowns, unlock status and the ultimate charge track. It uses four columns on larger screens, three on phones. Inventory and Admin use a viewport-sized veil with a constrained scrolling parchment panel so buttons remain reachable. Admin actions update controls in place. Sword ultimates share timing and camera composition but use distinct names, colors and pixel motifs: suns, crescents, flames, shards, leaves, portals, lightning, fangs, stars, wisps and scrap. No camera shake, orbital movement or lightning animation in reduced motion.

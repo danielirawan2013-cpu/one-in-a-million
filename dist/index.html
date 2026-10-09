@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#162526">
+  <meta name="description" content="A tiny human. A million-to-one gift. Explore a pixel dungeon, find unpredictable loot, and unlock your strength to save your monster family.">
+  <title>One in a Million — Pip's adventure</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="game.mjs"></script>
+</head>
+<body>
+<svg class="symbol-bank" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20 3 11V5h6l3 3 3-3h6v6Z"/></symbol>
+  <symbol id="i-sword" viewBox="0 0 24 24"><path d="m5 19 2-2M4 14l6 6M8 15 18 4l3-1-1 4L10 18" fill="none" stroke="currentColor" stroke-width="2.5"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M8 3h8l5 5v8l-5 5H8l-5-5V8Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9 9h5M10 15h5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m14 2-9 12h6l-1 8 9-13h-6Z"/></symbol>
+  <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9 3h6v6l4 5v6H5v-6l4-5ZM8 3h8M6 15h12" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m7 12 5-5 5 5M12 7v12" fill="none" stroke="currentColor" stroke-width="3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4v16M17 4v16" fill="none" stroke="currentColor" stroke-width="4"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4ZM17 8q5 4 0 8" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+</defs></svg>
+<div class="app">
+  <header class="masthead">
+    <a class="wordmark" href="./" aria-label="One in a Million home"><svg class="brand-spark" aria-hidden="true"><use href="#i-spark"/></svg><span>ONE IN A<br><b>MILLION</b></span></a>
+    <p class="tagline">Small hero.<br><em>Impossible strength.</em></p>
+    <div class="header-actions"><button id="sound" class="quiet icon-button" aria-label="Turn sound on" aria-pressed="false"><svg><use href="#i-sound"/></svg><span id="sound-label">Sound off</span></button><button id="help" class="quiet">How to play</button><button id="pause" class="quiet icon-button" aria-label="Pause game"><svg><use href="#i-pause"/></svg></button></div>
+  </header>
+  <main class="game-layout">
+    <section class="play-area" aria-label="Dungeon adventure">
+      <div class="location-bar"><div><span class="location-dot"></span><strong id="location">Bramble Hollow</strong><span id="location-note">Home, sweet slightly haunted home.</span></div><span id="chapter-label">Chapter one</span></div>
+      <div class="viewport" id="viewport">
+        <canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E to interact, Q for power, Shift to dodge, H to heal."></canvas>
+        <div class="hud" aria-label="Player status"><div class="health"><svg><use href="#i-heart"/></svg><div class="health-track"><div id="health-fill"></div></div><span id="health-text">100 / 100</span></div><div class="money"><svg><use href="#i-coin"/></svg><span id="coins">0</span></div></div>
+        <div id="interact-hint" class="interaction" hidden><kbd>E</kbd><span></span></div>
+        <div id="toast" class="loot-toast" role="status" hidden></div>
+        <div id="overlay" class="scene-overlay"></div>
+        <div class="scene-caption" id="scene-caption">Some heroes start smaller than others.</div>
+      </div>
+      <div class="action-strip"><span><kbd>W A S D</kbd> Move</span><span><kbd>SPACE</kbd> Attack</span><span><kbd>E</kbd> Interact</span><span><kbd>SHIFT</kbd> Dodge</span><button id="power-action" disabled><svg><use href="#i-spark"/></svg><kbd>Q</kbd><span id="power-label">Power sleeping</span></button><button id="heal-action"><svg><use href="#i-potion"/></svg><kbd>H</kbd><span id="potion-label">3 potions</span></button></div>
+      <div class="touch-controls" aria-label="Touch controls"><div class="dpad"><button data-move="up" aria-label="Move up"><svg><use href="#i-arrow"/></svg></button><button data-move="left" aria-label="Move left"><svg><use href="#i-arrow"/></svg></button><button data-move="down" aria-label="Move down"><svg><use href="#i-arrow"/></svg></button><button data-move="right" aria-label="Move right"><svg><use href="#i-arrow"/></svg></button></div><div class="touch-actions"><button id="touch-dodge">Dodge</button><button id="touch-interact">Use</button><button id="touch-attack" class="attack-button"><svg><use href="#i-sword"/></svg>Attack</button></div></div>
+      <p class="save-note" id="save-note">Your adventure saves on this device. Take your time.</p>
+    </section>
+    <aside class="journal" aria-label="Quest and inventory">
+      <div class="journal-heading"><span class="binding-line"></span><h1>Pip’s journal</h1><span class="binding-line"></span></div>
+      <section class="quest"><h2>A family matter</h2><p>Uncle Bones is trapped in the old crypt. Bring him home before the knight finds him.</p><ol id="quest-steps"><li id="step-training"><span class="step-check"></span>Find your first spark</li><li id="step-guards"><span class="step-check"></span>Clear the mossway</li><li id="step-boss"><span class="step-check"></span>Defeat the iron warden</li><li id="step-home"><span class="step-check"></span>Bring Uncle Bones home</li></ol></section>
+      <section class="potential"><div class="section-heading"><h2>Hidden potential</h2><span id="stage-count">0 / 3</span></div><div class="potential-segments"><span></span><span></span><span></span></div><strong id="stage-title">A sleeping spark</strong><p id="stage-note">One in a million. You just don’t know it yet.</p><div class="xp-track"><div id="xp-fill"></div></div><small id="xp-label">12 resolve until your first unlock</small></section>
+      <section class="bag"><div class="section-heading"><h2>Your satchel</h2><span id="bag-count">0 finds</span></div><div class="equipped"><canvas id="weapon-icon" width="24" height="24" aria-hidden="true"></canvas><div><small>Equipped</small><strong id="weapon-name">Battered sword</strong></div><span id="weapon-damage">5 DMG</span></div><div id="inventory" class="inventory"><p class="empty-bag">A little room for a little luck.<br>Find a chest to fill your satchel.</p></div><p class="bag-tip">Rare treasures equip automatically.<br>Sell your junk at the family shop.</p></section>
+      <section class="field-note"><h2>A note to self</h2><p id="field-note">“If I don’t come back, someone please water Grandma’s gold.”</p></section>
+    </aside>
+  </main>
+  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>First playable chapter · v0.1</span></footer>
+</div>
+<div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

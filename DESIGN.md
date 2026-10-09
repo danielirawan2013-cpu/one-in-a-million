@@ -131,7 +131,7 @@ The game Canvas is (480 × 304), scaled with pixelated rendering. Its desktop vi
 
 Canvas depth comes from pixel shading, ground shadows, and entities sorted by their feet. UI depth uses a dark ambient shadow around the viewport, a warm paper panel above a translucent dark scene veil, and a smaller loot-toast shadow. Exact shadow values live in the sidecar.
 
-Movement belongs to the world: walking, lanterns, insects, combat arcs, and expanding gold power bursts. Reduced motion removes camera shake and makes camera following immediate; the existing ambient world animations continue.
+Movement belongs to the world: walking, lanterns, insects, directional sword swings, and expanding gold power bursts. Reduced motion removes camera shake and makes camera following immediate; the existing ambient world animations continue.
 
 ## Shapes
 
@@ -160,3 +160,6 @@ The world and journal use square forms. The viewport has a framed border (4px de
 - **Don't** substitute webpage cards for the Canvas world.
 - **Don't** use the pixel face for continuous journal body copy.
 - **Don't** retain camera shake when reduced motion is requested.
+
+## Combat Motion
+A short wind-up leads into an eased forward sword strike, then recovery. The hand, grip and blade remain connected to Pip’s directional sprite; upward swings render behind his body. Enemies show a forward warning before swinging in a locked direction. Contact produces brief knockback and a hit flash. Dodge cancels a swing. Reduced motion removes the blade trail and camera shake while retaining readable attack timing.

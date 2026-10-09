@@ -1,60 +1,90 @@
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave} from './core.mjs';
-import {makeArea,isSolid} from './world.mjs';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.2.0';
+import {makeArea,isSolid} from './world.mjs?v=0.2.0';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
-    this.random=random;this.onEvent=onEvent;this.mode='title';this.inventory=[];this.opened=new Set();this.defeated=new Set();this.rescued=false;this.returned=false;
-    this.player={x:352,y:340,hp:100,xp:0,coins:0,potions:3,weapon:5,boots:false,pendant:false,facing:{x:0,y:1},attackTime:0,attackCd:0,powerCd:0,dodgeTime:0,dodgeCd:0,invulnerable:0};
+    this.random=random;this.onEvent=onEvent;this.mode='title';this.inventory=[];this.opened=new Set();this.defeated=new Set();this.rescued=false;this.returned=false;this.knightMet=false;this.familyProof=false;this.truthRevealed=false;this.chapter2Started=false;this.storyDone=false;
+    this.player={x:352,y:340,hp:100,xp:0,coins:0,potions:3,weapon:5,boots:false,pendant:false,facing:{x:0,y:1},attackFacing:{x:0,y:1},attackHit:false,attackTime:0,attackCd:0,powerCd:0,dodgeTime:0,dodgeCd:0,invulnerable:0,hurtFlash:0};
     this.area=makeArea('hollow');this.effects=[];this.particles=[];this.time=0;this.shake=0;this.hint=null;this.dirty=true;
   }
   get stage(){return stageFor(this.player.xp);}
   get attackDamage(){return this.player.weapon+[0,3,6,9][this.stage];}
+  get chapter(){return this.familyProof?3:this.returned?2:1;}
+  get exits(){return this.area.exits.filter(e=>!e.requires||this[e.requires]);}
   emit(type,data={}){this.dirty=true;this.onEvent({type,...data});}
   start(){this.mode='playing';this.emit('started');}
   snapshot(){
     const {x,y,hp,xp,coins,potions,weapon,boots,pendant}=this.player;
-    return {version:1,area:this.area.id,player:{x,y,hp,xp,coins,potions,weapon,boots,pendant},inventory:this.inventory,opened:[...this.opened],defeated:[...this.defeated],rescued:this.rescued,returned:this.returned};
+    return {version:2,area:this.area.id,player:{x,y,hp,xp,coins,potions,weapon,boots,pendant},inventory:this.inventory,opened:[...this.opened],defeated:[...this.defeated],rescued:this.rescued,returned:this.returned,knightMet:this.knightMet,familyProof:this.familyProof,truthRevealed:this.truthRevealed,chapter2Started:this.chapter2Started,storyDone:this.storyDone};
   }
   restore(data){
     if(!validSave(data))return false;
-    this.inventory=data.inventory.map(i=>({...i}));this.opened=new Set(data.opened);this.defeated=new Set(data.defeated);this.rescued=data.rescued;this.returned=!!data.returned;
+    this.inventory=data.inventory.map(i=>({...i}));this.opened=new Set(data.opened);this.defeated=new Set(data.defeated);this.rescued=data.rescued;this.returned=!!data.returned;this.knightMet=!!data.knightMet;this.familyProof=!!data.familyProof;this.truthRevealed=!!data.truthRevealed;this.chapter2Started=!!data.chapter2Started;this.storyDone=!!data.storyDone;
     for(const key of ['x','y','hp','xp','coins','potions','weapon','boots','pendant'])this.player[key]=data.player[key];
-    this.loadArea(data.area,null);this.mode=this.returned?'complete':'playing';this.emit('restored');return true;
+    this.loadArea(data.area,null);this.mode=this.storyDone?'complete':this.returned&&!this.chapter2Started?'dialog':'playing';this.emit('restored');return true;
   }
   loadArea(id,spawn){
     this.area=makeArea(id);if(spawn){this.player.x=spawn.x;this.player.y=spawn.y;}
     if(isSolid(this.area,this.player.x,this.player.y)){this.player.x=this.area.spawn.x;this.player.y=this.area.spawn.y;}
     for(const e of this.area.enemies)e.dead=this.defeated.has(e.id);
     for(const c of this.area.chests)c.opened=this.opened.has(c.id);
-    this.player.invulnerable=1.1;this.effects=[];this.particles=[];this.hint=null;this.emit('area',{area:id});
+    if(id==='hollow'&&this.returned)this.area.npcs.push({id:'bones-home',kind:'skeleton',x:294,y:335,label:'Talk to Uncle Bones'});
+    if(id==='hollow'&&this.storyDone)this.area.npcs=this.area.npcs.filter(n=>n.id!=='customer');
+    if(id==='hollow'&&this.storyDone)this.area.npcs.push({id:'grandma-home',kind:'dragon',x:404,y:302,label:'Talk to Grandma'},{id:'ally',kind:'knight',x:436,y:338,label:'Talk to your knight friend'});
+    if(id==='ember'){this.area.enemies.find(e=>e.id==='collector').dormant=!this.truthRevealed;if(this.truthRevealed){const ally=this.area.npcs.find(n=>n.id==='rowan');ally.id='ally';ally.x=471;ally.y=390;}}
+    this.player.invulnerable=1.1;this.player.attackTime=0;this.player.attackCd=0;this.player.dodgeTime=0;this.effects=[];this.particles=[];this.hint=null;this.emit('area',{area:id});
   }
   tick(dt,input={}){
     dt=clamp(dt,0,.05);this.time+=dt;this.shake=Math.max(0,this.shake-dt*18);
     this.effects=this.effects.filter(e=>(e.life-=dt)>0);this.particles=this.particles.filter(p=>{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=20*dt;return p.life>0;});
     if(this.mode!=='playing')return;
     const p=this.player;
-    for(const k of ['attackTime','attackCd','powerCd','dodgeTime','dodgeCd','invulnerable'])p[k]=Math.max(0,p[k]-dt);
+    for(const k of ['attackTime','attackCd','powerCd','dodgeTime','dodgeCd','invulnerable','hurtFlash'])p[k]=Math.max(0,p[k]-dt);
     let dx=(input.right?1:0)-(input.left?1:0),dy=(input.down?1:0)-(input.up?1:0);
     const len=Math.hypot(dx,dy);
-    if(len){dx/=len;dy/=len;if(!p.dodgeTime)p.facing={x:dx,y:dy};}
+    if(len){dx/=len;dy/=len;if(!p.dodgeTime&&!p.attackTime)p.facing={x:dx,y:dy};}
     if(p.dodgeTime){dx=p.facing.x;dy=p.facing.y;}
-    const speed=p.dodgeTime?230:p.boots?90:74;
+    const speed=p.dodgeTime?230:(p.boots?90:74)*(p.attackTime?.45:1);
     moveBody(p,dx*dt*speed,dy*dt*speed,(x,y)=>isSolid(this.area,x,y));
+    const elapsed=SWORD_SWING.duration-p.attackTime;
+    if(p.attackTime&&!p.attackHit&&elapsed>=SWORD_SWING.hitAt){
+      p.attackHit=true;this.emit('swing');
+      moveBody(p,p.attackFacing.x*3,p.attackFacing.y*3,(x,y)=>isSolid(this.area,x,y));
+      for(const e of this.area.enemies)if(!e.dead&&!e.dormant&&inFront(p,e,p.attackFacing,SWORD_SWING.reach,SWORD_SWING.halfAngle))this.damageEnemy(e,this.attackDamage);
+    }
     for(const e of this.area.enemies){
-      if(e.dead)continue;
-      e.cooldown=Math.max(0,e.cooldown-dt);e.stun=Math.max(0,e.stun-dt);e.flash=Math.max(0,e.flash-dt);
+      if(e.dead||e.dormant)continue;
+      e.cooldown=Math.max(0,e.cooldown-dt);e.stun=Math.max(0,e.stun-dt);e.flash=Math.max(0,e.flash-dt);e.swingTime=Math.max(0,e.swingTime-dt);
       const d=distance(e,p),boss=e.kind==='boss';
-      if(e.kind!=='practice'&&d<(boss?190:145)&&d>17&&!e.stun){
+      if(e.knockback){moveBody(e,e.knockback.x*dt,e.knockback.y*dt,(x,y)=>isSolid(this.area,x,y));e.knockback.time-=dt;if(e.knockback.time<=0)e.knockback=null;}
+      if(e.windup>0){
+        e.windup=Math.max(0,e.windup-dt);
+        if(e.windup===0){
+          e.swingTime=.18;e.cooldown=boss?1.2:.9;
+          if(!p.invulnerable&&inFront(e,p,e.attackFacing,boss?38:28)){
+            p.hp=Math.max(0,p.hp-e.damage);p.invulnerable=.65;p.hurtFlash=.12;this.shake=2;this.burst(p.x,p.y,'#ec8c79',6);this.emit('hurt');
+            if(p.hp===0){this.mode='dead';this.emit('death');return;}
+          }
+        }
+        continue;
+      }
+      if(e.kind!=='practice'&&d<(boss?190:145)&&d>19&&!e.stun&&!e.swingTime){
         const speed=boss?28:36;moveBody(e,(p.x-e.x)/d*dt*speed,(p.y-e.y)/d*dt*speed,(x,y)=>isSolid(this.area,x,y));
       }
-      if(d<(boss?29:21)&&!e.cooldown&&!e.stun){
-        e.cooldown=boss?1.3:1.1;this.effects.push({kind:'enemy-swing',x:e.x,y:e.y,life:.22,maxLife:.22,r:boss?30:20});
-        if(!p.invulnerable){p.hp=Math.max(0,p.hp-e.damage);p.invulnerable=.8;this.shake=2.5;this.burst(p.x,p.y,'#ec8c79',8);this.emit('hurt');
-          if(p.hp===0){this.mode='dead';this.emit('death');return;}
-        }
+      if(d<(boss?34:25)&&!e.cooldown&&!e.stun&&!e.swingTime){
+        e.windup=boss?.5:.34;e.attackFacing={x:d?(p.x-e.x)/d:0,y:d?(p.y-e.y)/d:1};
       }
     }
-    const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.area.exits];
+    if(this.area.id==='ember'&&this.truthRevealed){
+      const ally=this.area.npcs.find(n=>n.id==='ally');
+      if(ally){
+        ally.cooldown=Math.max(0,(ally.cooldown||0)-dt);ally.swingTime=Math.max(0,(ally.swingTime||0)-dt);
+        const targets=this.area.enemies.filter(e=>!e.dead&&!e.dormant).sort((a,b)=>distance(a,ally)-distance(b,ally));
+        const target=targets[0];
+        if(target){const d=distance(ally,target);if(d>25)moveBody(ally,(target.x-ally.x)/d*42*dt,(target.y-ally.y)/d*42*dt,(x,y)=>isSolid(this.area,x,y));else if(!ally.cooldown){ally.cooldown=1.2;ally.swingTime=.25;ally.attackFacing={x:d?(target.x-ally.x)/d:0,y:d?(target.y-ally.y)/d:-1};this.effects.push({kind:'number',x:target.x,y:target.y-29,text:'Rowan',life:.5,maxLife:.5,color:'#c5d9e2'});this.damageEnemy(target,8);}}
+      }
+    }
+    const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.exits];
     this.hint=options.filter(o=>distance(o,p)<31).sort((a,b)=>distance(a,p)-distance(b,p))[0]||null;
   }
   burst(x,y,color,count=18){
@@ -66,28 +96,28 @@ export class Adventure{
     this.dirty=true;
   }
   damageEnemy(enemy,damage){
-    if(enemy.dead)return;
-    enemy.hp=Math.max(0,enemy.hp-damage);enemy.stun=.27;enemy.flash=.13;
-    const d=Math.max(1,distance(enemy,this.player));moveBody(enemy,(enemy.x-this.player.x)/d*8,(enemy.y-this.player.y)/d*8,(x,y)=>isSolid(this.area,x,y));
+    if(enemy.dead||enemy.dormant)return;
+    enemy.hp=Math.max(0,enemy.hp-damage);enemy.stun=enemy.kind==='boss'?.06:.16;enemy.flash=.1;if(enemy.kind!=='boss')enemy.windup=0;
+    const d=Math.max(1,distance(enemy,this.player));enemy.knockback={x:(enemy.x-this.player.x)/d*65,y:(enemy.y-this.player.y)/d*65,time:.12};this.shake=Math.max(this.shake,1.2);
     this.effects.push({kind:'number',x:enemy.x,y:enemy.y-20,text:String(damage),life:.6,maxLife:.6,color:'#f7d58e'});this.burst(enemy.x,enemy.y,'#b5b6c0',7);
     if(!enemy.hp){enemy.dead=true;this.defeated.add(enemy.id);this.player.coins+=enemy.coins;this.gainResolve(enemy.xp);this.emit('defeated',{id:enemy.id,name:enemy.name});}
   }
   attack(){
     const p=this.player;if(this.mode!=='playing'||p.attackCd)return false;
-    p.attackTime=.18;p.attackCd=.33;this.emit('swing');
-    for(const e of this.area.enemies){const d=distance(p,e);if(!e.dead&&d<37){const dot=d<17?1:((e.x-p.x)*p.facing.x+(e.y-p.y)*p.facing.y)/d;if(dot>-.12)this.damageEnemy(e,this.attackDamage);}}
+    if(p.dodgeTime)return false;
+    p.attackTime=SWORD_SWING.duration;p.attackCd=SWORD_SWING.cooldown;p.attackFacing={...p.facing};p.attackHit=false;
     return true;
   }
   power(){
     const p=this.player;if(this.mode!=='playing')return false;
     if(!this.stage){this.emit('message',{text:'Your power is sleeping. Defeat the practice armour to find your first spark.'});return false;}
     if(p.powerCd>0)return false;
-    p.powerCd=p.pendant?4.5:7;p.invulnerable=.5;this.shake=4;
+    p.attackTime=0;p.attackHit=true;p.powerCd=p.pendant?4.5:7;p.invulnerable=.5;this.shake=4;
     const r=45+this.stage*14;this.effects.push({kind:'power',x:p.x,y:p.y,life:.55,maxLife:.55,r});this.burst(p.x,p.y,'#f2d591',30);
-    for(const e of this.area.enemies)if(!e.dead&&distance(p,e)<r)this.damageEnemy(e,17+this.stage*16);
+    for(const e of this.area.enemies)if(!e.dead&&!e.dormant&&distance(p,e)<r)this.damageEnemy(e,17+this.stage*16);
     this.emit('power');return true;
   }
-  dodge(){if(this.mode!=='playing'||this.player.dodgeCd)return false;this.player.dodgeTime=.16;this.player.dodgeCd=.8;this.player.invulnerable=.26;this.emit('dodge');return true;}
+  dodge(){if(this.mode!=='playing'||this.player.dodgeCd)return false;this.player.attackTime=0;this.player.attackHit=true;this.player.dodgeTime=.16;this.player.dodgeCd=.8;this.player.invulnerable=.3;this.emit('dodge');return true;}
   heal(){
     const p=this.player;if(this.mode!=='playing')return false;
     if(!p.potions){this.emit('message',{text:'No potions left. Buy one at the family shop for 8 coins.'});return false;}
@@ -96,11 +126,11 @@ export class Adventure{
   }
   interact(){
     if(this.mode!=='playing')return false;
-    const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.area.exits];
+    const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.exits];
     const o=options.filter(o=>distance(o,this.player)<33).sort((a,b)=>distance(a,this.player)-distance(b,this.player))[0];
     if(!o){this.emit('message',{text:'Get a little closer to a chest, doorway, or family member.'});return false;}
     if(o.type){
-      if(o.locked&&!this.defeated.has('warden')){this.emit('message',{text:'The golden chest is sealed by the iron warden.'});return false;}
+      if((o.locked||o.lockedBy)&&!this.defeated.has(o.lockedBy||'warden')){this.emit('message',{text:'Defeat this area’s boss to unseal the golden chest.'});return false;}
       const loot=rollLoot(o.type,this.random);o.opened=true;this.opened.add(o.id);this.inventory.push(loot);
       const p=this.player;
       if(loot.id==='potion')p.potions++;
@@ -114,12 +144,27 @@ export class Adventure{
     if(o.to){
       if(this.area.id==='hollow'&&o.id==='north'&&!this.stage){this.emit('message',{text:'First, practice on the wayward armour in the courtyard. Space to swing your sword.'});return false;}
       if(this.area.id==='moss'&&o.id==='north'&&this.area.enemies.some(e=>!e.dead)){this.emit('message',{text:'The crypt is sealed. Defeat all three mossway guards to open it.'});return false;}
+      if(this.area.id==='thorn'&&o.id==='north'&&this.area.enemies.some(e=>!e.dead)){this.emit('message',{text:'Clear the sentries to reach the family archive.'});return false;}
+      if(this.area.id==='tower'&&o.id==='north'&&!this.familyProof){this.emit('message',{text:'Collect the family portrait first. Rowan needs to see the truth.'});return false;}
+      if(o.to==='thorn'&&!this.knightMet){this.mode='dialog';this.emit('knight-customer');return false;}
+      if(o.to==='thorn')this.chapter2Started=true;
       this.loadArea(o.to,o.spawn);return true;
     }
     if(o.id==='shop'){this.mode='dialog';this.emit('shop');return true;}
+    if(o.id==='bones-home'||o.id==='grandma-home'){this.mode='dialog';this.emit('family-home',{who:o.id});return true;}
     if(o.id==='uncle'){
       if(!this.defeated.has('warden')){this.mode='dialog';this.emit('uncle-locked');return true;}
       this.rescued=true;this.mode='dialog';this.emit('rescue');return true;
+    }
+    if(o.id==='customer'){this.mode='dialog';this.emit(this.returned?'knight-customer':'knight-intro');return true;}
+    if(o.id==='portrait'){this.mode='dialog';if(!this.defeated.has('archivist')){this.emit('portrait-locked');return true;}this.familyProof=true;this.emit('family-proof');return true;}
+    if(o.id==='rowan'){this.mode='dialog';if(!this.familyProof){this.emit('message',{text:'Bring the family portrait from the archive first.'});this.mode='playing';return false;}this.emit('reveal');return true;}
+    if(o.id==='ally'){this.mode='dialog';this.emit('ally');return true;}
+    if(o.id==='grandma'){
+      this.mode='dialog';
+      if(!this.truthRevealed){this.emit('reveal');return true;}
+      if(!this.defeated.has('collector')){this.emit('grandma-locked');return true;}
+      this.emit('grandma-rescued');return true;
     }
     return false;
   }
@@ -128,6 +173,10 @@ export class Adventure{
     this.inventory=this.inventory.filter(i=>i.rarity!=='trash');this.player.coins+=value;this.emit('sold',{value,count:junk.length});return value;
   }
   buyPotion(){if(this.player.coins<8){this.emit('message',{text:'A potion costs 8 coins. Sell some junk or defeat a guard first.'});return false;}this.player.coins-=8;this.player.potions++;this.emit('bought');return true;}
-  returnHome(){if(!this.rescued)return false;this.returned=true;this.loadArea('hollow',{x:203,y:173});this.mode='complete';this.emit('complete');return true;}
+  returnHome(){if(!this.rescued)return false;this.returned=true;this.loadArea('hollow',{x:330,y:310});this.mode='dialog';this.emit('chapter');return true;}
+  meetKnight(){if(!this.returned)return false;if(!this.knightMet){this.player.coins+=8;this.knightMet=true;}this.chapter2Started=true;this.mode='dialog';this.emit('knight-customer');return true;}
+  continueStory(){if(!this.returned||!this.knightMet)return false;this.chapter2Started=true;this.player.hp=100;this.player.potions=Math.max(3,this.player.potions);this.loadArea(this.familyProof?'ember':'thorn',{x:352,y:416});this.mode='playing';this.emit('continued');return true;}
+  revealTruth(){if(!this.familyProof||this.area.id!=='ember')return false;this.truthRevealed=true;const official=this.area.enemies.find(e=>e.id==='collector');official.dormant=false;official.cooldown=1;const rowan=this.area.npcs.find(n=>n.id==='rowan');if(rowan){rowan.id='ally';rowan.x=428;rowan.y=235;rowan.cooldown=.8;}this.mode='playing';this.emit('truth-revealed');return true;}
+  finishStory(){if(!this.truthRevealed||!this.defeated.has('collector'))return false;this.storyDone=true;this.loadArea('hollow',{x:330,y:310});this.mode='complete';this.emit('complete');return true;}
   recover(){this.player.hp=100;this.player.attackCd=0;this.player.powerCd=0;this.loadArea('hollow',{x:352,y:340});this.mode='playing';this.emit('recovered');}
 }

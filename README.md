@@ -1,6 +1,6 @@
 # One in a Million
 
-A playable pixel adventure. Pip is a small human shopkeeper raised by monsters. He looks weak, but a one-in-a-million gift lies dormant in his heart. Rescue Uncle Bones from the old crypt to unlock it.
+A playable pixel adventure. Pip is a small human shopkeeper raised by monsters. He looks weak, but a one-in-a-million gift lies dormant in his heart. Protect his adopted monster family and discover what that strength is for.
 
 [Play the game](https://danielirawan2013-cpu.github.io/one-in-a-million/) · [Source on GitHub](https://github.com/danielirawan2013-cpu/one-in-a-million)
 
@@ -28,14 +28,19 @@ Open http://localhost:5173. Opening `index.html` directly with `file://` will no
 
 Touch movement and action buttons appear on small screens. Sound is optional. Progress saves in local browser storage; it does not sync between devices.
 
-## First chapter
+## Three playable chapters
 
-- Explore the family shop courtyard, mossway, and crypt.
-- Defeat enchanted armour and a boss to earn three stages of hidden strength.
-- Open wooden, iron, and golden chests. Their trash / useful / rare odds are 65/30/5, 35/50/15, and 10/60/30.
+1. Rescue Uncle Bones from the old crypt and bring him home.
+2. Rowan, Pip’s knight friend and regular shop customer, takes a royal dragon bounty to pay for her own family’s medicine. Reach the family archive and find Pip’s portrait.
+3. Before Rowan attacks Grandma, Pip stops her sword with his hidden strength and reveals that the monsters raised him. The two fight together against the royal official who invented the bounty to steal Grandma’s treasure.
+
+Silk runs the family shop, Uncle Bones has bad knees, and Grandma’s treasure includes birthday presents. Pip remains a small human in his oversized apron throughout.
+
+- Six regions with enemies, bosses and wooden, iron and golden chests. Trash / useful / rare odds: 65/30/5, 35/50/15 and 10/60/30.
 - Rare equipment equips automatically. Sell junk and buy healing potions at Silk’s shop.
-- Rescue Uncle Bones and bring him home. You can continue exploring afterward or start again.
-- The chapter is winnable without rare equipment. Death returns you to the courtyard with your loot and progression intact.
+- Sword attacks have a brief wind-up, a forward strike, and recovery. Damage lands once in front; dodging cancels a swing. Enemies telegraph their attacks and lock their direction.
+- All chapters are winnable without rare equipment. Death keeps loot and progression.
+- Original chapter-one saves continue into chapter two with equipment and unlocked strength intact. Choose **Continue adventure** after refreshing.
 
 ## Development
 
@@ -61,4 +66,4 @@ The included workflow tests the game and deploys `dist/`. In the repository's **
 
 Pixel art, map layouts, story, and sounds are authored for this project. Silkscreen by Jason Kottke is bundled under the SIL Open Font License; see `dist/assets/OFL.txt`.
 
-This is a complete first playable chapter, rather than the full game. Future chapters can introduce the knight and the rest of Pip’s family.
+Version 0.2 includes the planned family-and-knight story across three playable chapters.

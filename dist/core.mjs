@@ -14,6 +14,11 @@ export function rollLoot(type, random=Math.random){
 export const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function stageFor(xp){return xp>=80?3:xp>=38?2:xp>=12?1:0;}
+export const SWORD_SWING=Object.freeze({duration:.42,windup:.09,hitAt:.13,activeUntil:.19,cooldown:.48,reach:32,halfAngle:Math.PI/3});
+export function inFront(origin,target,facing,reach,halfAngle=Math.PI/3){
+  const dx=target.x-origin.x,dy=target.y-origin.y,d=Math.hypot(dx,dy);
+  return d<=reach&&(d<1||(dx*facing.x+dy*facing.y)/d>=Math.cos(halfAngle));
+}
 export function moveBody(body,dx,dy,isSolid){
   const blocked=(x,y)=>[[-5,-3],[5,-3],[-5,3],[5,3]].some(([ox,oy])=>isSolid(x+ox,y+oy));
   if(!blocked(body.x+dx,body.y)) body.x+=dx;
@@ -21,7 +26,7 @@ export function moveBody(body,dx,dy,isSolid){
 }
 export const SAVE_KEY='one-in-a-million:v1';
 export function validSave(s){
-  return !!s && s.version===1 && ['hollow','moss','crypt'].includes(s.area)
+  return !!s && [1,2].includes(s.version) && ['hollow','moss','crypt','thorn','tower','ember'].includes(s.area)
     && s.player && ['x','y','hp','xp','coins','potions','weapon'].every(k=>Number.isFinite(s.player[k]))
     && s.player.hp>0 && s.player.hp<=100 && s.player.x>=0 && s.player.x<704 && s.player.y>=0 && s.player.y<480
     && s.player.xp>=0 && s.player.coins>=0 && s.player.potions>=0 && s.player.weapon>=5 && s.player.weapon<=12
@@ -29,5 +34,6 @@ export function validSave(s){
     && Array.isArray(s.inventory) && s.inventory.length<=200 && s.inventory.every(i=>i && ['trash','useful','rare'].includes(i.rarity) && typeof i.name==='string' && typeof i.id==='string' && Number.isFinite(i.value) && i.value>=0)
     && Array.isArray(s.opened) && s.opened.every(i=>typeof i==='string')
     && Array.isArray(s.defeated) && s.defeated.every(i=>typeof i==='string')
-    && typeof s.rescued==='boolean';
+    && typeof s.rescued==='boolean'
+    && (s.version===1||['returned','knightMet','familyProof','truthRevealed','chapter2Started','storyDone'].every(k=>typeof s[k]==='boolean'));
 }

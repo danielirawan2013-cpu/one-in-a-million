@@ -1,6 +1,6 @@
-import {SWORDS} from './swords.mjs?v=0.3.1';
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.3.1';
-import {SWORD_SWING,clamp} from './core.mjs?v=0.3.1';
+import {SWORDS} from './swords.mjs?v=0.3.2';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.3.2';
+import {SWORD_SWING,clamp} from './core.mjs?v=0.3.2';
 const P={'.':null,o:'#252830',h:'#634337',H:'#8d6550',s:'#e9bc92',S:'#f3d1a0',e:'#202a2c',a:'#e8debe',A:'#c4b48f',c:'#517a78',C:'#6e9b91',b:'#493e3e',B:'#695246',l:'#b9c3c0',L:'#e0dfce',g:'#8b8e99',G:'#5b6072',r:'#997150',R:'#c7a46b',v:'#a799c9',V:'#716a97',y:'#f1c674',Y:'#e9e0af'};
 const sprites={
   pip:[
@@ -226,7 +226,7 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
   if(game.specialScene){
     const scene=game.specialScene,progress=Math.min(1,scene.elapsed/(scene.duration*.68)),p=game.player,color=scene.color,motif=scene.theme.motif;
     if(!scene.hit){
-      if(scene.skin==='normal')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});
+      if(!Object.hasOwn(SWORDS,scene.skin)&&scene.skin!=='scrap-king')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});
       if(!reducedMotion){
         ctx.globalAlpha=.22;ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y-20,90*(1-progress)+20,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
         for(let i=0;i<24;i++){
@@ -248,7 +248,18 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
   }
   for(const e of game.effects){
     const progress=1-e.life/e.maxLife;
-    if(e.kind==='lightning'){
+    if(e.kind==='ultimate-theme'){
+      ctx.globalAlpha=1-progress;const r=e.r*(reducedMotion?.65:.4+progress);
+      for(let i=0;i<8;i++){const a=i*Math.PI/4,x=e.x+Math.cos(a)*r,y=e.y+Math.sin(a)*r;
+        if(e.motif==='bolt'){pixelLine(ctx,e.color,x-3,y-5,x+2,y,2);pixelLine(ctx,e.color,x+2,y,x-2,y+6,2);}
+        else if(e.motif==='flame'){block(ctx,e.color,x-2,y-7,4,11);block(ctx,'#fff1c8',x-1,y,2,5);}
+        else if(e.motif==='star'||e.motif==='sun'){block(ctx,e.color,x-4,y,9,1);block(ctx,e.color,x,y-4,1,9);}
+        else if(e.motif==='moon'||e.motif==='void'){ctx.strokeStyle=e.color;ctx.beginPath();ctx.arc(x,y,5,e.motif==='moon'?.4:0,Math.PI*(e.motif==='moon'?1.6:2));ctx.stroke();}
+        else if(e.motif==='ice'||e.motif==='fang'||e.motif==='leaf'){pixelLine(ctx,e.color,x,y-6,x-3,y+4,2);pixelLine(ctx,e.color,x-3,y+4,x+3,y+4,2);}
+        else if(e.motif==='wisp'){block(ctx,e.color,x-1,y-5,2,10);}
+        else{block(ctx,e.color,x-3,y-2,6,4);}
+      }ctx.globalAlpha=1;
+    }else if(e.kind==='lightning'){
       ctx.globalAlpha=1-progress;
       if(!reducedMotion){for(let j=-1;j<=1;j++)for(let i=0;i<7;i++){const xx=e.x+j*8+(i%2?7:-5),yy=e.y-100+i*14;pixelLine(ctx,j?'#69acb8':'#e0fbf9',xx,yy,e.x+j*8+(i%2?-5:7),yy+14,j?1:2);}}
       for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=e.r*(reducedMotion?.6:progress);pixelLine(ctx,e.color,e.x+Math.cos(a)*5,e.y+Math.sin(a)*5,e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,1);}ctx.globalAlpha=1;

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.1';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.2';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.3.1';
-import {AdminTools} from './dist/admin.mjs?v=0.3.1';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.1';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.1';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.3.2';
+import {AdminTools} from './dist/admin.mjs?v=0.3.2';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.2';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.2';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -205,4 +205,8 @@ test('all sword ultimates need a full meter, retain separate themes and consume 
 
 test('the hammer also supports its own charged ultimate',()=>{
  const g=new Adventure();g.start();g.player.xp=12;g.player.weaponSkin='thunderhammer';g.player.ultimateCharge=100;assert.ok(g.special());assert.equal(g.specialScene.theme.title,'Tempest Judgement');assert.equal(g.player.ultimateCharge,0);
+});
+
+test('the three starter swords have different ultimate names and retain their own weapon',()=>{
+ const titles=new Set();for(const weapon of [5,8,12]){const g=new Adventure();g.start();g.player.xp=12;g.player.weapon=weapon;g.player.ultimateCharge=100;assert.ok(g.special());titles.add(g.specialScene.theme.title);assert.equal(g.player.weapon,weapon);}assert.equal(titles.size,3);
 });

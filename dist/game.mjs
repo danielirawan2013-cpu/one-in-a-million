@@ -1,11 +1,11 @@
-import {ULTIMATES} from './ultimates.mjs?v=0.3.1';
-import {EPISODES} from './campaign.mjs?v=0.3.1';
-import {SWORDS} from './swords.mjs?v=0.3.1';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.3.1';
-import {Adventure} from './engine.mjs?v=0.3.1';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.3.1';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.3.1';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.3.1';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.3.2';
+import {EPISODES} from './campaign.mjs?v=0.3.2';
+import {SWORDS} from './swords.mjs?v=0.3.2';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.3.2';
+import {Adventure} from './engine.mjs?v=0.3.2';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.3.2';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.3.2';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.3.2';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -55,9 +55,9 @@ function updateUI(){
   $('heal-action').disabled=game.mode!=='playing';
   $('power-action').disabled=game.mode!=='playing'||!stage||p.powerCd>0;
   $('power-label').textContent=!stage?'Power sleeping':p.powerCd>0?'Ready in '+Math.ceil(p.powerCd)+'s':'Heart burst';
-  const ultSkin=p.scrapKing?'scrap-king':p.weaponSkin??'normal',ult=ULTIMATES[ultSkin];
+  const ultSkin=ultimateKey(p),ult=ULTIMATES[ultSkin];
   $('special-action').hidden=false;$('special-action').disabled=game.mode!=='playing'||p.specialCd>0||p.ultimateCharge<100||p.scrapKing&&!p.specialUnlocked||!p.scrapKing&&(!stage||!ult);
-  $('special-label').textContent=p.specialCd>0?'Ultimate · '+Math.ceil(p.specialCd)+'s':ult?.title??'Equip a sword';
+  $('special-label').textContent=(ult?.title??'Ultimate')+(p.specialCd>0?' · '+Math.ceil(p.specialCd)+'s':'');
   $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing?'Unlock your first potential stage.':'Press V to unleash your ultimate.';
   $('ultimate-fill').style.width=p.ultimateCharge+'%';$('ultimate-charge').textContent=Math.floor(p.ultimateCharge)+' / 100';$('channel-action').disabled=game.mode!=='playing'||p.ultimateCharge>=100;
 
@@ -127,7 +127,7 @@ function event(e){
     case 'message':toast(e.text);break;
     case 'loot':toast(e.loot.name,{title:e.loot.rarity==='rare'?'A rare find!':e.loot.rarity==='trash'?'Well… it’s something.':'Something useful.',rarity:e.loot.rarity});updateInventory();save();break;
     case 'unlock':toast(['','Your first spark! R unleashes a burst of strength.','Growing flame! Stronger swings and a bigger heart burst.','Full potential! Still small. Now impossibly strong.'][e.stage],{title:'Potential unlocked'});break;
-    case 'special-start':clearInput();showPanel('<div class="cinematic" role="status" style="--cinematic-color:'+game.specialScene.color+'"><div class="cinematic-top">'+escapeHTML(e.skin==='scrap-king'?'Scrap King':SWORDS[e.skin]?.name??'Heartsteel')+'</div><div class="cinematic-bottom"><strong>'+escapeHTML(e.theme.title)+'</strong><span>'+escapeHTML(e.theme.line)+'</span></div></div>');audioCue('power');break;
+    case 'special-start':clearInput();showPanel('<div class="cinematic" role="status" style="--cinematic-color:'+game.specialScene.color+'"><div class="cinematic-top">'+escapeHTML(e.skin==='scrap-king'?'Scrap King':SWORDS[e.skin]?.name??e.theme.name??'Heartsteel')+'</div><div class="cinematic-bottom"><strong>'+escapeHTML(e.theme.title)+'</strong><span>'+escapeHTML(e.theme.line)+'</span></div></div>');audioCue('power');break;
     case 'special-impact':audioCue('unlock');break;
     case 'special-end':closePanel();save();break;
     case 'parried':toast('Perfect parry! Strike now for a stronger counterattack.');break;

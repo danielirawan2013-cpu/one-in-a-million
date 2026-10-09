@@ -1,9 +1,9 @@
-import {ULTIMATES} from './ultimates.mjs?v=0.3.1';
-import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.3.1';
-import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.3.1';
-import {SWORDS} from './swords.mjs?v=0.3.1';
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.3.1';
-import {makeArea,isSolid} from './world.mjs?v=0.3.1';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.3.2';
+import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.3.2';
+import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.3.2';
+import {SWORDS} from './swords.mjs?v=0.3.2';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.3.2';
+import {makeArea,isSolid} from './world.mjs?v=0.3.2';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
@@ -43,7 +43,7 @@ export class Adventure{
   tick(dt,input={}){
     dt=clamp(dt,0,.05);this.time+=dt;this.shake=Math.max(0,this.shake-dt*18);
     this.effects=this.effects.filter(e=>(e.life-=dt)>0);this.particles=this.particles.filter(p=>{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=20*dt;return p.life>0;});
-    if(this.mode==='special'){const scene=this.specialScene;scene.elapsed+=dt;if(!scene.hit&&scene.elapsed>=scene.duration*.68){scene.hit=true;for(const e of this.area.enemies)if(!e.dead&&!e.dormant)this.damageEnemy(e,scene.damage);this.effects.push({kind:'power',x:this.player.x,y:this.player.y,life:.7,maxLife:.7,r:180,color:scene.color});this.burst(this.player.x,this.player.y,scene.color,70);this.shake=7;this.emit('special-impact');}if(scene.elapsed>=scene.duration){this.specialScene=null;this.mode='playing';this.player.specialCd=12;this.emit('special-end');}return;}
+    if(this.mode==='special'){const scene=this.specialScene;scene.elapsed+=dt;if(!scene.hit&&scene.elapsed>=scene.duration*.68){scene.hit=true;for(const e of this.area.enemies)if(!e.dead&&!e.dormant){this.damageEnemy(e,scene.damage);this.effects.push({kind:'ultimate-theme',x:e.x,y:e.y-10,life:.7,maxLife:.7,r:36,color:scene.color,motif:scene.theme.motif});}this.effects.push({kind:'power',x:this.player.x,y:this.player.y,life:.7,maxLife:.7,r:180,color:scene.color});this.burst(this.player.x,this.player.y,scene.color,70);this.shake=7;this.emit('special-impact');}if(scene.elapsed>=scene.duration){this.specialScene=null;this.mode='playing';this.player.specialCd=12;this.emit('special-end');}return;}
     if(this.mode!=='playing')return;
     const p=this.player;
     for(const k of ['attackTime','attackCd','parryTime','parryCd','riposteTime','specialCd','lightningCd','sweepCd','guardCd','chargeCd','guardTime','mendCd','cycloneCd','starsCd','powerCd','dodgeTime','dodgeCd','invulnerable','hurtFlash'])p[k]=Math.max(0,p[k]-dt);
@@ -151,9 +151,9 @@ export class Adventure{
   special({reducedMotion=false}={}){
     const p=this.player;if(this.mode!=='playing'||p.specialCd||p.ultimateCharge<100)return false;
     if(p.scrapKing?!p.specialUnlocked:!this.stage)return false;
-    const skin=p.scrapKing?'scrap-king':p.weaponSkin??'normal',theme=ULTIMATES[skin];
+    const skin=ultimateKey(p),theme=ULTIMATES[skin];
     p.ultimateCharge=0;p.attackTime=0;p.parryTime=0;p.dodgeTime=0;p.attackHit=true;
-    this.specialScene={elapsed:0,duration:reducedMotion?.65:2.6,hit:false,reducedMotion,skin,theme,color:p.scrapKing?'#e4ab6c':SWORDS[p.weaponSkin]?.color??'#f5da91',damage:p.scrapKing?999:Math.round(this.attackDamage*3)};
+    this.specialScene={elapsed:0,duration:reducedMotion?.65:2.6,hit:false,reducedMotion,skin,theme,color:p.scrapKing?'#e4ab6c':SWORDS[p.weaponSkin]?.color??theme.color??'#f5da91',damage:p.scrapKing?999:Math.round(this.attackDamage*3)};
     this.mode='special';this.emit('special-start',{theme,skin});return true;
   }
   parry(){const p=this.player;if(this.mode!=='playing'||p.parryCd||p.dodgeTime)return false;p.attackTime=0;p.attackHit=true;p.parryTime=.2;p.parryCd=.7;p.parryFacing={...p.facing};this.emit('parry-start');return true;}

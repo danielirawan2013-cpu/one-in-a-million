@@ -71,7 +71,6 @@ components:
     backgroundColor: "{colors.button-green}"
     textColor: "{colors.button-paper}"
     padding: "11px 16px"
-    height: "44px minimum"
   button-primary-hover:
     backgroundColor: "{colors.button-green-hover}"
   button-secondary:

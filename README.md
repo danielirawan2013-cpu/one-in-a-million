@@ -87,3 +87,13 @@ The included workflow tests the game and deploys `dist/`. In the repository's **
 Pixel art, map layouts, story, and sounds are authored for this project. Silkscreen by Jason Kottke is bundled under the SIL Open Font License; see `dist/assets/OFL.txt`.
 
 Version 0.3 preserves the planned family-and-knight story, expands it to eight chapters, and adds sword skins, the shop interior, parry, effects, and local admin tools.
+
+## The secret divine story (v0.4.0)
+
+After rescuing Uncle Bones, swing a sword towards the lake in Bramble Hollow to summon the Lightning God. Defeating it guarantees Thunderwake and opens a portal on a new stone path into the lake. Walk to the portal and press **G**. If you already defeated the boss, the portal appears when you continue your save.
+
+Three additional chapters contain six realms and six god fights: Rimewyrm (frost), Oras (oaths), Aurel (sun), Nym (moon), Mnemos (memory), and Veyr (the crown). Clear each god and sentinel, then read the recovered memory beside the northern stair to continue. Their attacks mark danger before impact and have safe areas.
+
+Pip discovers he is a banished demigod while keeping his small human appearance and adopted monster family. This optional arc preserves the original eight-chapter story. The southern portal returns to the family shop; returning or falling retains your divine checkpoint, weapons, loot, and expedition progress.
+
+Bosses now have distinct silhouettes: an ice dragon, oath judge, solar deity, moon spirit, floating memory keeper, winged sovereign, and ten distinct expedition constructs. Regions have separate authored landscapes, including frozen sky, lava channels, tide pools, floating library shelves, salvage rails and celestial stairs.

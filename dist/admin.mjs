@@ -1,6 +1,6 @@
-import {HAMMER_LOOT} from './lightning.mjs?v=0.3.2';
-import {LOOT} from './core.mjs?v=0.3.2';
-import {SWORDS,SWORD_IDS} from './swords.mjs?v=0.3.2';
+import {HAMMER_LOOT} from './lightning.mjs?v=0.4.0';
+import {LOOT} from './core.mjs?v=0.4.0';
+import {SWORDS,SWORD_IDS} from './swords.mjs?v=0.4.0';
 // Local single-player tools, not server/account administration.
 export const ADMIN_ITEMS=[HAMMER_LOOT,...Object.entries(LOOT).flatMap(([rarity,items])=>items.map(i=>({...i,name:i.id==='blade'?'Dawnblade (classic)':i.name,rarity}))),...SWORD_IDS.map(id=>({id,skin:id,name:SWORDS[id].name,rarity:'rare',value:60})),{id:'scrap-king',name:'Scrap King · Admin',rarity:'admin',value:0}];
 export class AdminTools{

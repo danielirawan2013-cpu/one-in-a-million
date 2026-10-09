@@ -169,3 +169,6 @@ The family-shop interior uses warm wooden floorboards, a woven rug, shelves, and
 
 ## Ability Dock and Weapon Effects
 A framed ability dock sits directly below the Canvas, with keys, cooldowns, unlock status and the ultimate charge track. It uses four columns on larger screens, three on phones. Inventory and Admin use a viewport-sized veil with a constrained scrolling parchment panel so buttons remain reachable. Admin actions update controls in place. Sword ultimates share timing and camera composition but use distinct names, colors and pixel motifs: suns, crescents, flames, shards, leaves, portals, lightning, fangs, stars, wisps and scrap. No camera shake, orbital movement or lightning animation in reduced motion.
+
+### Region and boss identities
+The divine arc adds six distinct landscapes and god silhouettes. Rimewyrm retains the dragon artwork supplied by the parallel combat work, with frost crystals and an ice crown. Other gods use a judge's scales, solar halo and flame hands, a crescent silhouette, floating memory book and four hands, and a six-winged crown. Main expedition bosses have distinct machine, tree, loom, crab, crystal, centaur, orrery and colossus bodies. Region backgrounds replace the repeated carpet hall with authored terrain and landmarks. Frost warnings use dark red against the pale floor; other divine warnings use pale gold.

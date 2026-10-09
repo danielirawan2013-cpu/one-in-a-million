@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.3.2';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.4.0';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.3.2';
-import {AdminTools} from './dist/admin.mjs?v=0.3.2';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.3.2';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.3.2';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.4.0';
+import {AdminTools} from './dist/admin.mjs?v=0.4.0';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.4.0';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.4.0';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -209,4 +209,61 @@ test('the hammer also supports its own charged ultimate',()=>{
 
 test('the three starter swords have different ultimate names and retain their own weapon',()=>{
  const titles=new Set();for(const weapon of [5,8,12]){const g=new Adventure();g.start();g.player.xp=12;g.player.weapon=weapon;g.player.ultimateCharge=100;assert.ok(g.special());titles.add(g.specialScene.theme.title);assert.equal(g.player.weapon,weapon);}assert.equal(titles.size,3);
+});
+
+test('the lake portal opens only after the storm dies, survives old saves, and has a walkable bridge',()=>{
+ const g=new Adventure();g.start();assert.equal(g.enterDivine(),false);assert.ok(!g.area.divinePortal);
+ g.rescued=true;g.defeated.add('storm-summoned');g.loadArea('hollow',{x:181,y:310});g.damageEnemy(g.area.enemies.find(e=>e.id==='lake-storm'),999);
+ assert.ok(g.area.divinePortal);assert.equal(g.exits.filter(e=>e.id==='lake-portal').length,1);
+ for(let x=120;x<=190;x+=5)for(const y of [301,312,323])assert.equal(isSolid(g.area,x,y),false,'portal path');
+ assert.equal(isSolid(g.area,132,280),true,'lake outside path is still solid');
+ const old=g.snapshot();delete old.divineStep;delete old.divineDone;delete old.demigodRevealed;const r=new Adventure();assert.ok(r.restore(old));assert.ok(r.area.divinePortal);assert.ok(interactAt(r,r.exits.find(e=>e.id==='lake-portal')));assert.equal(r.area.id,'skythreshold');
+});
+test('all six gods require combat and memory checkpoints, reveal the exile, and preserve the family plot',()=>{
+ const events=[],g=new Adventure({onEvent:e=>events.push(e)});g.start();g.defeated.add('lake-storm');g.rescued=true;g.player.xp=80;g.openDivinePortal();assert.ok(g.enterDivine());
+ for(let i=0;i<6;i++){
+  g.mode='playing';assert.equal(g.area.divineStep,i+1);assert.equal(g.chapter,9+Math.floor(i/2));assert.equal(g.advanceDivine(),false);
+  assert.equal(interactAt(g,g.area.npcs[0]),false,'memory sealed before combat');
+  for(const e of g.area.enemies)beat(g,e);
+  assert.ok(interactAt(g,g.area.npcs[0]));assert.equal(g.demigodRevealed,i>=1);
+  const r=new Adventure();assert.ok(r.restore(g.snapshot()));assert.equal(r.divineStep,i+1);assert.equal(r.area.id,g.area.id);assert.equal(r.mode,'playing');
+  assert.ok(g.advanceDivine());
+ }
+ assert.ok(g.divineDone);assert.ok(g.demigodRevealed);assert.equal(g.area.id,'hollow');assert.equal(g.chapter,1);assert.equal(g.storyDone,false);assert.equal(g.returned,false);assert.equal(g.campaignStep,0);assert.ok(events.some(e=>e.type==='divine-complete'));assert.ok(validSave(g.snapshot()));
+});
+test('returning home or falling in a divine realm retains the current god and main expedition',()=>{
+ const g=new Adventure();g.start();g.storyDone=true;g.campaignStep=5;g.campaignDone=false;g.defeated.add('lake-storm');g.player.xp=80;g.enterDivine();g.mode='playing';
+ for(const e of g.area.enemies)g.damageEnemy(e,999);interactAt(g,g.area.npcs[0]);g.advanceDivine();g.mode='playing';
+ assert.ok(interactAt(g,g.exits.find(e=>e.id==='divine-return')));assert.equal(g.area.id,'hollow');assert.equal(g.divineStep,2);g.enterDivine();assert.equal(g.area.id,'oathtribunal');g.recover();assert.equal(g.divineStep,2);assert.equal(g.campaignStep,5);assert.ok(g.storyDone);g.enterDivine();assert.equal(g.area.id,'oathtribunal');
+ const s=g.snapshot();s.divineStep=99;assert.equal(validSave(s),false);
+});
+test('divine attacks have six patterns, readable windups, safe spaces and dodge protection',async()=>{
+ const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.4.0');const patterns=new Set();
+ for(const ep of GOD_EPISODES){
+  const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(ep.id,{x:352,y:410});const e=g.area.enemies.find(e=>e.divine);patterns.add(e.pattern);g.player.invulnerable=0;e.divineCd=0;step(g,.01);assert.ok(e.divineCast);assert.equal(g.player.hp,100);
+  const zones=e.divineCast.zones;let safe;
+  for(let x=200;x<=500&&!safe;x+=20)for(let y=90;y<=420;y+=20)if(!isSolid(g.area,x,y)&&!zones.some(z=>inDivineZone({x,y},z))){safe={x,y};break;}
+  assert.ok(safe,'every pattern offers a safe position');Object.assign(g.player,safe);g.player.invulnerable=99;step(g,1.1);assert.equal(g.player.hp,100);assert.ok(g.effects.some(f=>f.kind==='divine-strike'));
+  const z=divineZones(e,g.player)[0];const hit={x:z.x+(z.kind==='ring'?z.r:0),y:z.y};assert.ok(inDivineZone(hit,z));
+ }
+ assert.equal(patterns.size,6);
+});
+
+test('every boss and region has its own authored visual identity',async()=>{
+ const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.4.0');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.4.0');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.4.0');
+ const ids=['warden','archivist',...CAMPAIGN_IDS.map(id=>id+'-boss'),...GOD_IDS.map(id=>id+'-god')];
+ assert.equal(ids.length,18);assert.equal(new Set(ids.map(id=>BOSS_DESIGNS[id]?.shape)).size,18);assert.ok(ids.every(id=>BOSS_DESIGNS[id]?.height>30));
+ assert.equal(new Set(Object.values(REGION_STYLES)).size,21);assert.ok([...CAMPAIGN_IDS,...GOD_IDS,'moss','crypt','thorn','tower','ember'].every(id=>REGION_STYLES[id]));
+ for(const id of GOD_IDS){const g=new Adventure();g.loadArea(id,{x:352,y:414});for(const p of [...g.area.exits,...g.area.chests,...g.area.npcs])assert.equal(isSolid(g.area,p.x,p.y),false,id+' '+p.id);}
+});
+
+test('divine danger deals damage at impact while guard and dodge can protect Pip',async()=>{
+ const {inDivineZone}=await import('./dist/gods.mjs?v=0.4.0');
+ for(const defense of ['none','guard','dodge']){
+  const g=new Adventure();g.start();g.loadArea('oathtribunal',{x:320,y:410});const e=g.area.enemies.find(e=>e.divine);e.divineCd=0;e.cooldown=999;g.player.invulnerable=0;step(g,.01);assert.equal(g.player.hp,100);assert.ok(e.divineCast.zones.some(z=>inDivineZone(g.player,z)));
+  step(g,.8);assert.equal(g.player.hp,100);
+  if(defense==='guard')g.player.guardTime=3;
+  if(defense==='dodge'){g.player.facing={x:0,y:-1};assert.ok(g.dodge());}
+  step(g,.27);assert.equal(g.player.hp,defense==='none'?80:defense==='guard'?90:100);
+ }
 });

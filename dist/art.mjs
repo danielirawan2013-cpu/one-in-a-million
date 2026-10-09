@@ -1,6 +1,10 @@
-import {SWORDS} from './swords.mjs?v=0.3.2';
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.3.2';
-import {SWORD_SWING,clamp} from './core.mjs?v=0.3.2';
+import {paintRegionGround} from './region-art.mjs?v=0.4.0';
+import {drawBoss,BOSS_DESIGNS} from './boss-art.mjs?v=0.4.0';
+import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.4.0';
+import {weaponSwing} from './moves.mjs?v=0.4.0';
+import {SWORDS} from './swords.mjs?v=0.4.0';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.4.0';
+import {SWORD_SWING,clamp} from './core.mjs?v=0.4.0';
 const P={'.':null,o:'#252830',h:'#634337',H:'#8d6550',s:'#e9bc92',S:'#f3d1a0',e:'#202a2c',a:'#e8debe',A:'#c4b48f',c:'#517a78',C:'#6e9b91',b:'#493e3e',B:'#695246',l:'#b9c3c0',L:'#e0dfce',g:'#8b8e99',G:'#5b6072',r:'#997150',R:'#c7a46b',v:'#a799c9',V:'#716a97',y:'#f1c674',Y:'#e9e0af'};
 const sprites={
   pip:[
@@ -119,6 +123,10 @@ export function drawChest(c,chest,time=0){
   }
 }
 export function drawGate(c,gate,areaId){
+  if(gate.id==='lake-portal'||gate.id==='divine-return'){
+    const x=gate.x,y=gate.y;block(c,'#1b2942',x-14,y-36,28,40);block(c,'#8b99cb',x-18,y-33,4,39);block(c,'#8b99cb',x+14,y-33,4,39);block(c,'#c3d1f2',x-14,y-38,28,4);block(c,'#c3d1f2',x-10,y-41,20,4);
+    for(let i=0;i<7;i++)block(c,i%2?'#526b9f':'#afc3ee',x-8+(i%3)*6,y-30+i*4,2,2);return;
+  }
   if(gate.id==='shop-door')return;if(areaId==='shop'){block(c,'#302e2c',gate.x-20,gate.y-23,40,32);block(c,'#bf9a68',gate.x-23,gate.y-25,46,3);block(c,'#bf9a68',gate.x-23,gate.y-23,3,32);block(c,'#bf9a68',gate.x+20,gate.y-23,3,32);return;}
   const x=gate.x,y=gate.y;block(c,'#232f30',x-22,y-38,44,47);block(c,areaId==='crypt'?'#66636e':'#777c65',x-27,y-35,10,44);block(c,'#999a7b',x-27,y-35,3,43);block(c,'#777c65',x+17,y-35,10,44);block(c,'#777c65',x-23,y-44,46,10);block(c,'#a2a28b',x-17,y-50,34,8);block(c,'#30483c',x-27,y+6,54,4);
   for(const lx of [x-33,x+33])drawObject(c,{kind:'lantern',x:lx,y:y+1},0);
@@ -149,6 +157,7 @@ export function groundCanvas(area){
     block(ctx,'#67514f',310,97,84,265);block(ctx,'#997c62',310,97,2,265);block(ctx,'#997c62',392,97,2,265);
     for(let y=101;y<362;y+=8){block(ctx,'#745c52',313,y,78,1);if(y%3===0){block(ctx,'#947553',316,y,4,3);block(ctx,'#947553',385,y,4,3);}}
   }
+  paintRegionGround(ctx,area,noise);
   return c;
 }
 export function itemIcon(canvas,id){
@@ -164,14 +173,29 @@ export function itemIcon(canvas,id){
   else if(id==='rock'){s('#777979',5,9,14,10);s('#a3a092',8,6,9,10);s('#c8bea3',9,7,4,2);}
   else{s('#7e7766',5,14,14,3);s('#9b9481',8,7,4,12);s('#b6a98c',8,7,5,3);s('#775841',5,18,7,3);}
 }
+function divineZone(c,z,color,fill=false){
+  c.save();c.strokeStyle=color;c.lineWidth=fill?3:1;c.fillStyle=color+'33';c.beginPath();
+  if(z.kind==='circle')c.arc(z.x,z.y,z.r,0,Math.PI*2);
+  else if(z.kind==='ring'){c.arc(z.x,z.y,z.r-z.width,0,Math.PI*2);c.moveTo(z.x+z.r+z.width,z.y);c.arc(z.x,z.y,z.r+z.width,0,Math.PI*2);}
+  else if(z.kind==='column')c.rect(z.x-z.width,45,z.width*2,400);
+  else c.rect(162,z.y-z.width,380,z.width*2);
+  if(fill&&z.kind!=='ring')c.fill();c.stroke();
+  if(!fill){pixelLine(c,color,z.x-4,z.y,z.x+4,z.y);pixelLine(c,color,z.x,z.y-4,z.x,z.y+4);}c.restore();
+}
 export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input={}}={}){
   ctx.imageSmoothingEnabled=false;
   const shake=reducedMotion?0:game.shake;
   ctx.save();ctx.translate(-Math.round(camera.x)+(shake?Math.round(Math.sin(game.time*90)*shake):0),-Math.round(camera.y));ctx.drawImage(background,0,0);
+  if(game.area.divinePortal){
+    block(ctx,'#52687b',114,298,62,30);block(ctx,'#a6b8bd',114,298,62,3);
+    for(let x=118;x<176;x+=12){block(ctx,'#82969d',x,302,10,20);block(ctx,'#bfd0ce',x,302,10,2);}
+  }
+  if(game.area.divineStep){ctx.strokeStyle=game.area.color;ctx.globalAlpha=.3;ctx.beginPath();ctx.arc(352,239,110,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;}
   for(const gate of game.exits)drawGate(ctx,gate,game.area.id);
   if(game.area.id==='hollow'){
     for(let i=0;i<8;i++){const x=61+i*12,y=247+((i*19)%124);block(ctx,'#80b0a5',x+Math.sin(game.time+i)*3,y,6,1);}
   }
+  for(const fx of game.effects)if(fx.kind==='divine-strike')divineZone(ctx,{...fx,kind:fx.shape},fx.color,true);
   const entities=[...game.area.objects.map(o=>({...o,sortY:['house','counter','shelf'].includes(o.kind)?o.y+o.h:o.y,draw:()=>drawObject(ctx,o,game.time)})),...game.area.chests.map(o=>({...o,sortY:o.y,draw:()=>drawChest(ctx,o,game.time)})),...game.area.npcs.map(n=>({...n,sortY:n.y,draw:()=>{
     shadow(ctx,n.x,n.y,n.kind==='dragon'?48:20,5);sprite(ctx,n.kind,n.x,n.y,{scale:n.kind==='dragon'?1.6:1});
     if(n.id==='uncle'&&!game.defeated.has('warden')){block(ctx,'#69717e',n.x-14,n.y-25,28,2);for(let i=0;i<5;i++)block(ctx,'#848b91',n.x-12+i*6,n.y-25,2,28);}
@@ -180,14 +204,20 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
   }})),...game.area.enemies.map(e=>({...e,sortY:e.y,draw:()=>{
     if(e.dormant)return;
     if(e.dead){block(ctx,'#66746b',e.x-5,e.y-3,9,4);block(ctx,'#9a9d85',e.x-3,e.y-3,3,2);return;}
-    if(e.id==='lake-storm'){ctx.strokeStyle='#91dce9';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y-12,25,0,Math.PI*2);ctx.stroke();for(let i=0;i<5;i++){const a=game.time+i*1.26;block(ctx,'#91dce9',e.x+Math.cos(a)*22,e.y-14+Math.sin(a)*18,2,3);}if(e.stormCast){ctx.strokeStyle='#e99b78';ctx.beginPath();ctx.arc(e.stormCast.x,e.stormCast.y,26,0,Math.PI*2);ctx.stroke();block(ctx,'#e99b78',e.stormCast.x-1,e.stormCast.y-8,2,16);block(ctx,'#e99b78',e.stormCast.x-8,e.stormCast.y-1,16,2);}}
-    shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});
+    if(e.divineCast)for(const z of e.divineCast.zones)divineZone(ctx,z,game.area.id==='skythreshold'?'#83384b':'#ffdaa0');
+    const dragon=e.id==='lake-storm';
+    if(dragon){
+      drawLightningDragon(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x});
+      if(e.stormCast){ctx.strokeStyle='#e99b78';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.stormCast.x,e.stormCast.y,26,0,Math.PI*2);ctx.stroke();block(ctx,'#e99b78',e.stormCast.x-1,e.stormCast.y-8,2,16);block(ctx,'#e99b78',e.stormCast.x-8,e.stormCast.y-1,16,2);}
+    }else if(!drawBoss(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x})){shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='rowan-betrayer'?'knight':e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});}
+    if(e.freeze||e.root||e.burn){const color=e.freeze?'#b4edf1':e.root?'#b8cf86':'#f6a157';block(ctx,color,e.x-10,e.y+2,20,2);for(let i=0;i<3;i++)block(ctx,color,e.x-9+i*8,e.y-(e.freeze?17:5),2,e.freeze?18:8);}
     if(e.windup||e.swingTime){
       const face=e.attackFacing,angle=Math.atan2(face.y,face.x),radius=e.kind==='boss'?38:28;
-      if(e.windup){ctx.strokeStyle='#d78670';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,radius,angle-.65,angle+.65);ctx.stroke();blade(ctx,e.x+Math.cos(angle-1.2)*6,e.y-8+Math.sin(angle-1.2)*6,angle-1.2,{length:e.kind==='boss'?29:21,hand:false});}
+      if(dragon){ctx.strokeStyle=e.windup?'#edb18a':'#c4f4ec';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,radius,angle-.65,angle+.65);ctx.stroke();if(e.swingTime)pixelLine(ctx,'#b9f5ed',e.x,e.y-12,e.x+face.x*radius,e.y+face.y*radius-12,3);}
+      else if(e.windup){ctx.strokeStyle='#d78670';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,radius,angle-.65,angle+.65);ctx.stroke();blade(ctx,e.x+Math.cos(angle-1.2)*6,e.y-8+Math.sin(angle-1.2)*6,angle-1.2,{length:e.kind==='boss'?29:21,hand:false});}
       else{const progress=1-e.swingTime/.18;blade(ctx,e.x+face.x*4,e.y-8+face.y*4,angle-1+progress*1.8,{length:e.kind==='boss'?29:21,hand:false});}
     }
-    if(e.hp<e.maxHp||e.kind==='boss'){const w=e.kind==='boss'?42:24;block(ctx,'#252b2d',e.x-w/2,e.y-(e.kind==='boss'?40:23),w,4);block(ctx,e.kind==='boss'?'#cf8972':'#b5c396',e.x-w/2+1,e.y-(e.kind==='boss'?39:22),Math.round((w-2)*e.hp/e.maxHp),2);}
+    if(e.hp<e.maxHp||e.kind==='boss'){const w=dragon?68:e.kind==='boss'?42:24,top=dragon?94:BOSS_DESIGNS[e.id]?.height?BOSS_DESIGNS[e.id].height+7:e.kind==='boss'?40:23;block(ctx,'#252b2d',e.x-w/2,e.y-top,w,4);block(ctx,dragon?'#91dce9':e.kind==='boss'?'#cf8972':'#b5c396',e.x-w/2+1,e.y-top+1,Math.round((w-2)*e.hp/e.maxHp),2);}
   }}))];
   const p=game.player;
   entities.push({sortY:p.y,draw:()=>{
@@ -195,8 +225,8 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     if(game.stage>=2&&!reducedMotion){for(let i=0;i<game.stage*3;i++){const a=i*Math.PI*2/(game.stage*3)+game.time*.8;ctx.globalAlpha=.35;block(ctx,game.player.scrapKing?'#e4ab6c':'#f2d995',p.x+Math.cos(a)*14,p.y-7+Math.sin(a)*8,1,2);}ctx.globalAlpha=1;const orbit=game.time*2;block(ctx,'#f2d995',p.x+Math.cos(orbit)*13,p.y-11+Math.sin(orbit)*8,2,2);}
     const moving=input.up||input.down||input.left||input.right;const step=moving?Math.round(Math.sin(game.time*15)):0;
     const face=p.parryTime?p.parryFacing:p.attackTime?p.attackFacing:p.facing,angle=Math.atan2(face.y,face.x),up=face.y<-.5,side=Math.abs(face.x)>.5;
-    const elapsed=SWORD_SWING.duration-p.attackTime;
-    const strike=p.attackTime&&elapsed>=SWORD_SWING.windup&&elapsed<SWORD_SWING.activeUntil;
+    const swing=p.swing??weaponSwing(p),elapsed=swing.duration-p.attackTime;
+    const strike=p.attackTime&&elapsed>=swing.windup&&elapsed<swing.activeUntil;
     const lean=strike?1:0,bx=p.x+face.x*lean,by=p.y+face.y*lean;
     const skin=p.scrapKing?'scrap-king':p.weaponSkin;
     const drawBlade=(x,y,a,options={})=>skin?skinBlade(ctx,skin,x,y,a,{...options,scale:p.scrapKing?.65:.5}):blade(ctx,x,y,a,options);
@@ -204,10 +234,12 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
       if(p.parryTime){drawBlade(bx+face.x*7,by-8+face.y*7,angle+Math.PI/2);return;}
       if(p.attackTime){
         let offset;
-        if(elapsed<SWORD_SWING.windup)offset=-.75-.35*elapsed/SWORD_SWING.windup;
-        else if(elapsed<SWORD_SWING.activeUntil){const t=(elapsed-SWORD_SWING.windup)/(SWORD_SWING.activeUntil-SWORD_SWING.windup);offset=-1.1+1.9*(1-Math.pow(1-t,2));}
-        else{const t=(elapsed-SWORD_SWING.activeUntil)/(SWORD_SWING.duration-SWORD_SWING.activeUntil);offset=.8+.35*t;}
-        const hx=bx-face.y*4+face.x*2,hy=by-8+face.x*4+face.y*2;
+        if(elapsed<swing.windup)offset=-.75-.35*elapsed/swing.windup;
+        else if(elapsed<swing.activeUntil){const t=(elapsed-swing.windup)/(swing.activeUntil-swing.windup);offset=-1.1+1.9*(1-Math.pow(1-t,2));}
+        else{const t=(elapsed-swing.activeUntil)/(swing.duration-swing.activeUntil);offset=.8+.35*t;}
+        if(swing.halfAngle<.6)offset=0;
+        const thrust=swing.halfAngle<.6&&strike?9:2;
+        const hx=bx-face.y*4+face.x*thrust,hy=by-8+face.x*4+face.y*thrust;
         if(strike&&!reducedMotion){ctx.globalAlpha=.25;drawBlade(hx,hy,angle+offset-.2,{color:'#f3e2bc',hand:false});ctx.globalAlpha=1;}
         drawBlade(hx,hy,angle+offset,{color:p.weapon>=12?'#d2b6e4':'#d8ddda'});
       }else{
@@ -224,31 +256,14 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
   }});
   entities.sort((a,b)=>a.sortY-b.sortY).forEach(e=>e.draw());
   if(game.specialScene){
-    const scene=game.specialScene,progress=Math.min(1,scene.elapsed/(scene.duration*.68)),p=game.player,color=scene.color,motif=scene.theme.motif;
-    if(!scene.hit){
-      if(!Object.hasOwn(SWORDS,scene.skin)&&scene.skin!=='scrap-king')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});
-      if(!reducedMotion){
-        ctx.globalAlpha=.22;ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y-20,90*(1-progress)+20,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
-        for(let i=0;i<24;i++){
-          const a=i*Math.PI/12+game.time*.9,r=18+90*(1-progress),x=p.x+Math.cos(a)*r,y=p.y-20+Math.sin(a)*r;
-          if(motif==='bolt'){pixelLine(ctx,color,x,y-5,x-3,y,1);pixelLine(ctx,color,x-3,y,x+2,y,1);pixelLine(ctx,color,x+2,y,x-2,y+5,1);}
-          else if(motif==='star'||motif==='sun'){block(ctx,color,x-3,y,7,1);block(ctx,color,x,y-3,1,7);if(motif==='star'){block(ctx,color,x-1,y-1,3,3);}}
-          else if(motif==='moon'){ctx.strokeStyle=color;ctx.beginPath();ctx.arc(x,y,4,.5,Math.PI*1.5);ctx.stroke();}
-          else if(motif==='flame'){block(ctx,color,x-1,y-4,3,8);block(ctx,'#ffe1a0',x,y,1,4);block(ctx,color,x-2,y+3,5,2);}
-          else if(motif==='ice'||motif==='fang'){pixelLine(ctx,color,x-3,y+4,x,y-5,1);pixelLine(ctx,color,x,y-5,x+3,y+4,1);block(ctx,'#e7fbf6',x,y-1,1,5);}
-          else if(motif==='leaf'){pixelLine(ctx,color,x-3,y,x,y-4,2);pixelLine(ctx,color,x,y-4,x+3,y,2);pixelLine(ctx,color,x+3,y,x,y+4,2);}
-          else if(motif==='void'){ctx.strokeStyle=color;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.stroke();}
-          else if(motif==='wisp'){block(ctx,color,x,y,2,3);ctx.globalAlpha=.4;block(ctx,color,x-1,y+3,2,5);ctx.globalAlpha=1;}
-          else{block(ctx,i%2?'#ac8051':'#c7d6cd',x,y,3+i%3,3);}
-        }
-        // A growing crest and rising motes make the charged sword readable.
-        for(let i=0;i<8;i++){const x=p.x-18+i*5,y=p.y-18-(scene.elapsed*32+i*9)%65;ctx.globalAlpha=.6;block(ctx,color,x,y,1,4);}ctx.globalAlpha=1;
-      }
-    }else if(!reducedMotion){ctx.globalAlpha=.45*(1-(scene.elapsed-scene.duration*.68)/(scene.duration*.32));for(let i=0;i<16;i++){const a=i*Math.PI/8,r=40+(scene.elapsed-scene.duration*.68)*110;pixelLine(ctx,color,p.x+Math.cos(a)*20,p.y-12+Math.sin(a)*20,p.x+Math.cos(a)*r,p.y-12+Math.sin(a)*r,1);}ctx.globalAlpha=1;}
+    drawUltimateSpectacle(ctx,game,{reducedMotion});
+    const scene=game.specialScene,p=game.player;
+    if(!scene.hit){if(!Object.hasOwn(SWORDS,scene.skin)&&scene.skin!=='scrap-king')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color:scene.color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});}
   }
   for(const e of game.effects){
     const progress=1-e.life/e.maxLife;
-    if(e.kind==='ultimate-theme'){
+    if(['weapon-move','chain-bolt','strike-warning'].includes(e.kind)){drawMoveEffect(ctx,e,{reducedMotion});}
+    else if(e.kind==='ultimate-theme'){
       ctx.globalAlpha=1-progress;const r=e.r*(reducedMotion?.65:.4+progress);
       for(let i=0;i<8;i++){const a=i*Math.PI/4,x=e.x+Math.cos(a)*r,y=e.y+Math.sin(a)*r;
         if(e.motif==='bolt'){pixelLine(ctx,e.color,x-3,y-5,x+2,y,2);pixelLine(ctx,e.color,x+2,y,x-2,y+6,2);}
@@ -280,7 +295,6 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     else{ctx.globalAlpha=1-progress;ctx.strokeStyle=e.color??(e.kind==='enemy-swing'?'#d58370':'#f6d68a');ctx.lineWidth=e.kind==='unlock'?3:2;ctx.beginPath();ctx.arc(e.x,e.y-6,e.r*progress,0,Math.PI*2);ctx.stroke();if(e.kind==='power'||e.kind==='unlock'){if(!reducedMotion){ctx.globalAlpha=(1-progress)*.35;ctx.beginPath();ctx.arc(e.x,e.y-6,e.r*progress*.65,0,Math.PI*2);ctx.stroke();for(let j=0;j<8;j++){const a=j*Math.PI/4+progress;pixelLine(ctx,e.color??'#f4dea1',e.x+Math.cos(a)*e.r*progress*.55,e.y-6+Math.sin(a)*e.r*progress*.55,e.x+Math.cos(a)*e.r*progress,e.y-6+Math.sin(a)*e.r*progress,1);}ctx.globalAlpha=1-progress;}for(let i=0;i<12;i++){const a=i*Math.PI/6;block(ctx,e.color??'#f4dea1',e.x+Math.cos(a)*e.r*progress,e.y-6+Math.sin(a)*e.r*progress,3,3);}}ctx.globalAlpha=1;}
   }
   for(const p of game.particles){if(reducedMotion&&p.kind==='trail')continue;ctx.globalAlpha=Math.min(1,p.life*3);block(ctx,p.color,p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;
-  if(game.specialScene?.hit&&!reducedMotion){const fade=Math.max(0,1-(game.specialScene.elapsed-game.specialScene.duration*.68)/.22);ctx.globalAlpha=fade*.5;block(ctx,'#f5dfb5',camera.x,camera.y,480,304);ctx.globalAlpha=1;}
   if(input.charge&&game.mode==='playing'&&!reducedMotion){for(let i=0;i<10;i++){const a=i*Math.PI/5+game.time,r=9+(1-(game.time*2+i*.1)%1)*18;block(ctx,'#edc477',game.player.x+Math.cos(a)*r,game.player.y-9+Math.sin(a)*r,1,2);}}
   // Dusk insects stay anchored to the world, rather than flashing over the UI.
   if(game.area.id!=='crypt')for(let i=0;i<14;i++){const x=230+noise(i,8)*300+Math.sin(game.time*.5+i)*12,y=90+noise(i,9)*320+Math.cos(game.time*.6+i)*7;ctx.globalAlpha=.4+Math.sin(game.time*1.5+i)*.25;block(ctx,'#f2d986',x,y,1,1);}ctx.globalAlpha=1;

@@ -1,11 +1,13 @@
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.3.2';
-import {EPISODES} from './campaign.mjs?v=0.3.2';
-import {SWORDS} from './swords.mjs?v=0.3.2';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.3.2';
-import {Adventure} from './engine.mjs?v=0.3.2';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.3.2';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.3.2';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.3.2';
+import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.4.0';
+import {GOD_EPISODES} from './gods.mjs?v=0.4.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.4.0';
+import {EPISODES} from './campaign.mjs?v=0.4.0';
+import {SWORDS} from './swords.mjs?v=0.4.0';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.4.0';
+import {Adventure} from './engine.mjs?v=0.4.0';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.4.0';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.4.0';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.4.0';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -48,7 +50,7 @@ function updateUI(){
   const p=game.player,stage=game.stage;
   $('health-fill').style.width=p.hp+'%';$('health-text').textContent=p.hp+' / 100';$('coins').textContent=p.coins;
   $('location').textContent=game.area.name;$('location-note').textContent=game.area.note;
-  $('chapter-label').textContent='Chapter '+['','one','two','three','four','five','six','seven','eight'][game.chapter];
+  $('chapter-label').textContent='Chapter '+['','one','two','three','four','five','six','seven','eight','nine','ten','eleven'][game.chapter];
   $('scene-caption').textContent=game.area.id==='shop'?game.area.caption:game.storyDone&&game.area.id==='hollow'?'The whole family is home. Even the knight.':game.returned&&game.area.id==='hollow'?'Rowan is back at the shop. Hear what she’s planning.':game.stage&&game.area.id==='hollow'?'Your spark is awake. Head north into the mossway.':game.area.caption;
   $('weapon-name').textContent=p.scrapKing?'Scrap King · Admin':SWORDS[p.weaponSkin]?.name??(p.weapon>=12?'Dawnblade':p.weapon>=8?'Iron shortsword':'Battered sword');$('weapon-damage').textContent=game.attackDamage+' DMG';itemIcon($('weapon-icon'),p.scrapKing?'scrap-king':p.weaponSkin??(p.weapon>=12?'blade':'weapon'));
   $('potion-label').textContent=p.potions+' potion'+(p.potions===1?'':'s');
@@ -74,11 +76,12 @@ function updateUI(){
     3:{title:'Grandma’s last stand',description:game.storyDone?'You exposed the false bounty and saved Grandma. The shop has room for one more friend.':game.truthRevealed?'The knight knows Grandma is your family. Stand together against the official who created the bounty.':'Reach Grandma and tell Rowan the truth before her sword falls.',steps:[['Tell Rowan the truth',game.truthRevealed],['Clear the vault guards',['ember-1','ember-2'].every(id=>game.defeated.has(id))],['Stop the royal collector',game.defeated.has('collector')],['Bring everyone home',game.storyDone]]}
   },quest=quests[game.chapter]??{};
   if(game.campaignStep){const ep=EPISODES[game.campaignStep-1],done=game.campaignDone;quest.title=ep.chapter;quest.description=done?'The dungeon heart is safe. Everyone has a home to return to.':ep.arrival[0];quest.steps=[['Follow the trail to '+ep.name,done||game.area.id===ep.id],['Clear the constructs',done||[0,1,2,3].every(i=>game.defeated.has(ep.id+'-guard-'+i))],['Defeat '+ep.boss,done||game.defeated.has(ep.id+'-boss')],['Hear the next part of the story',done||game.defeated.has(ep.id+'-read')]];}
+  if(game.area.divineStep){const ep=GOD_EPISODES[game.area.divineStep-1];quest.title=ep.chapter;quest.description=ep.arrival[0];quest.steps=[['Enter '+ep.name,true],['Defeat the celestial sentinel',game.defeated.has(ep.id+'-sentinel')],['Defeat '+ep.boss,game.defeated.has(ep.id+'-god')],['Recover your lost memory',game.defeated.has(ep.id+'-read')]];}
   $('quest-title').textContent=quest.title;$('quest-description').textContent=quest.description;
   ['step-training','step-guards','step-boss','step-home'].forEach((id,i)=>{$(id).classList.toggle('complete',quest.steps[i][1]);$(id).querySelector('.step-text').textContent=quest.steps[i][0];});
   $('inventory-toggle').disabled=!adventureStarted||!['playing','paused','inventory'].includes(game.mode);
-  for(const [kind,key,level,name] of [['sweep','J',1,'Sweep'],['guard','K',2,'Guard'],['charge','L',3,'Rush'],['mend','C',1,'Mending Light'],['cyclone','X',2,'Cyclone'],['stars','B',3,'Starcall']]){
-    const b=$(kind+'-action'),cd=p[kind+'Cd'];b.disabled=game.mode!=='playing'||stage<level||cd>0;
+  for(const [kind,level] of Object.entries(ABILITY_LEVELS)){
+    const b=$(kind+'-action'),cd=p[kind+'Cd'],move=weaponKit(p).moves[kind],name=move.name;b.title=name+' · '+move.cooldown+' second cooldown · changes with your weapon';b.disabled=game.mode!=='playing'||stage<level||cd>0;
     b.querySelector('span').textContent=stage<level?name+' · unlock '+level:cd>0?name+' · '+Math.ceil(cd)+'s':name;
   }
   $('lightning-action').disabled=game.mode!=='playing'||p.scrapKing||p.weaponSkin!=='thunderhammer'||p.lightningCd>0;
@@ -87,7 +90,7 @@ function updateUI(){
   $('admin').disabled=game.mode==='special'||game.mode==='inventory';$('help').disabled=game.mode==='admin'||game.mode==='special'||game.mode==='inventory';
   $('pause').disabled=game.mode==='special'||game.mode==='admin'||game.mode==='inventory'||game.mode==='title'||game.mode==='complete'||game.mode==='dead'||game.mode==='dialog';
   $('pause').setAttribute('aria-label',game.mode==='paused'?'Resume game':'Pause game');
-  $('field-note').textContent=game.campaignStep?EPISODES[game.campaignStep-1].note:game.storyDone?'“We made room for one more. The knight asked for a smaller apron.”':game.familyProof?'“Grandma is a dragon, not a villain. Also, she forgot my birthday again.”':game.returned?'“My best customer is hunting my family. How do I tell her?”':game.defeated.has('warden')?'“I stopped a sword bigger than me. I am going to need a bigger breakfast.”':stage>0?'“That door felt lighter today. Maybe I’m stronger than I thought.”':'“If I don’t come back, someone please water Grandma’s gold.”';
+  $('field-note').textContent=game.area.divineStep?GOD_EPISODES[game.area.divineStep-1].note:game.campaignStep?EPISODES[game.campaignStep-1].note:game.storyDone?'“We made room for one more. The knight asked for a smaller apron.”':game.familyProof?'“Grandma is a dragon, not a villain. Also, she forgot my birthday again.”':game.returned?'“My best customer is hunting my family. How do I tell her?”':game.defeated.has('warden')?'“I stopped a sword bigger than me. I am going to need a bigger breakfast.”':stage>0?'“That door felt lighter today. Maybe I’m stronger than I thought.”':'“If I don’t come back, someone please water Grandma’s gold.”';
   const h=game.mode==='playing'?game.hint:null,hint=$('interact-hint');hint.hidden=!h;
   if(h)hint.querySelector('span').textContent=h.type?'Open '+({wood:'wooden',iron:'iron',gold:'golden'}[h.type])+' chest':h.label;
 }
@@ -116,6 +119,10 @@ function campaignPanel(episode,arrival=false){
   const paragraphs=arrival?episode.arrival:episode.ending;
   showPanel(`<div class="story-panel dialog-panel story-reader"><h2>${arrival?episode.chapter:episode.speaker}</h2>${paragraphs.map(p=>'<p>'+escapeHTML(p)+'</p>').join('')}<div class="buttons"><button data-action="${arrival?'close':'advance-campaign'}">${arrival?'Enter '+episode.name:game.campaignStep===10?'Bring everyone home':'Continue the journey'}</button>${arrival?'':'<button data-action="close" class="secondary">Explore first</button>'}</div></div>`);
 }
+function divinePanel(episode,arrival=false){
+  showPanel('<div class="story-panel dialog-panel story-reader"><h2>'+escapeHTML(arrival?episode.chapter:'A recovered memory')+'</h2>'+ (arrival?episode.arrival:episode.ending).map(p=>'<p>'+escapeHTML(p)+'</p>').join('')+'<div class="buttons"><button data-action="'+(arrival?'close':'advance-divine')+'">'+(arrival?'Enter '+episode.name:game.divineStep===6?'Return to your family':'Climb to the next realm')+'</button>'+(arrival?'':'<button data-action="close" class="secondary">Explore first</button>')+'</div></div>');
+}
+function divineEnding(){showPanel('<div class="story-panel story-reader"><h2>A door, not a throne.</h2><p>You defeated the six gods, recovered your memories, and broke the oath that banished you.</p><p>Pip is a demigod. He is still the tiny shopkeeper his family raised. Heaven can keep its crown. He has a home to protect.</p><p><strong>Divine story arc complete.</strong><br>Your weapons, family story, and expedition progress are preserved.</p><button data-action="close">Back to the family shop</button></div>');}
 function campaignEnding(){
   showPanel(`<div class="story-panel story-reader"><h2>A home worth saving.</h2><p>The false bounty is exposed, the dungeon heart is safe, and your family is home.</p><p>Rowan’s mum is recovering. Bones has his chair. Silk has a second till. Grandma has more presents than customers.</p><p>Pip is still small, still kind, and still wearing that oversized apron.</p><p><strong>Eight chapters complete.</strong><br>${game.opened.size} chests opened · ${game.inventory.filter(i=>i.skin).length} sword finds</p><div class="buttons"><button data-action="replay-campaign">Replay the expedition</button><button data-action="explore" class="secondary">Explore with your family</button></div><p class="footnote">Your swords and loot carry into the next expedition.</p></div>`);
 }
@@ -123,6 +130,10 @@ function event(e){
   if(['swing','power','loot','unlock','hurt','complete','dodge','healed','parried'].includes(e.type))audioCue(e.type);
   switch(e.type){
     case 'started':adventureStarted=true;break;
+    case 'portal-open':toast('The thunder falls silent. A doorway is rising from the lake. Walk onto the new stone path and press G.',{title:'Something remembers you'});save();break;
+    case 'divine-arrival':divinePanel(e.episode,true);game.defeated.add(game.area.id+'-visited');save();break;
+    case 'divine-lore':divinePanel(e.episode);save();break;
+    case 'divine-complete':divineEnding();save();break;
     case 'area':background=groundCanvas(game.area);camera.x=clamp(game.player.x-240,0,WIDTH-canvas.width);camera.y=clamp(game.player.y-canvas.height/2-42,0,HEIGHT-canvas.height);clearInput();break;
     case 'message':toast(e.text);break;
     case 'loot':toast(e.loot.name,{title:e.loot.rarity==='rare'?'A rare find!':e.loot.rarity==='trash'?'Well… it’s something.':'Something useful.',rarity:e.loot.rarity});updateInventory();save();break;
@@ -131,7 +142,7 @@ function event(e){
     case 'special-impact':audioCue('unlock');break;
     case 'special-end':closePanel();save();break;
     case 'parried':toast('Perfect parry! Strike now for a stronger counterattack.');break;
-    case 'hammer-earned':updateInventory();save();toast('Thunderwake hammer obtained! Equip it and press T to summon lightning.',{title:'The Lake Tempest defeated',rarity:'rare'});break;
+    case 'hammer-earned':updateInventory();save();toast('Thunderwake hammer obtained! T summons lightning. A portal has opened on the lake’s new stone path—press G to enter.',{title:'The Lake Tempest defeated',rarity:'rare'});break;
     case 'storm-summoned':toast('The Lake Tempest awakens. Dodge the marked lightning strikes!',{title:'Secret boss summoned'});save();break;
     case 'ability':audioCue('power');break;
     case 'equipped':updateInventory();save();break;
@@ -158,7 +169,7 @@ function event(e){
     case 'family-home':showPanel(`<div class="story-panel dialog-panel"><h2>${e.who==='bones-home'?'Uncle Bones':'Grandma'}</h2><p>${e.who==='bones-home'?'“I’ve been rescued once. That’s enough exercise for this century.”':'“Your birthday present has been in my treasure pile for twelve years. Better late than never.”'}</p><button data-action="close">Back to adventure</button></div>`);break;
     case 'death':showPanel('<div class="story-panel"><h2>A stumble.<br>Not the end.</h2><p>Silk found you and dragged you home.<br>“You owe me a new apron, short stuff.”</p><p>Your loot and unlocked strength are safe.</p><button data-action="recover">Try again · Full health</button></div>');break;
     case 'complete':completePanel();save();break;
-    case 'restored':adventureStarted=true;if(game.campaignDone)campaignEnding();else if(game.storyDone&&!game.campaignStep)completePanel();else if(game.returned&&!game.chapter2Started)chapterPanel();else closePanel();updateInventory();break;
+    case 'restored':adventureStarted=true;if(game.area.divineStep){if(!game.defeated.has(game.area.id+'-read')){game.mode='dialog';divinePanel(GOD_EPISODES[game.area.divineStep-1],true);}else closePanel();}else if(game.campaignDone)campaignEnding();else if(game.storyDone&&!game.campaignStep)completePanel();else if(game.returned&&!game.chapter2Started)chapterPanel();else closePanel();updateInventory();break;
     case 'healed':toast('Restored 40 health.');save();break;
   }
   if(game)updateUI();
@@ -172,7 +183,7 @@ function openInventory(){
   inventoryReturn={mode:game.mode,html:overlay.innerHTML};game.mode='inventory';
   const skins=[...new Set(game.inventory.filter(i=>i.skin).map(i=>i.skin))];
   const original=game.player.weapon>=12?'Dawnblade (classic)':game.player.weapon>=8?'Iron shortsword':'Battered sword';
-  showPanel('<div class="story-panel inventory-panel"><h2>Your weapons</h2><p>Choose a weapon to equip. E closes your inventory.</p><p>'+game.player.coins+' coins · '+game.player.potions+' potions · '+game.inventory.length+' find'+(game.inventory.length===1?'':'s')+'</p><div class="weapon-picker"><button data-inventory-equip="normal">'+original+'</button>'+skins.map(id=>'<button data-inventory-equip="'+id+'"><img src="assets/'+id+'.png" width="32" height="48" alt=""><span>'+escapeHTML(SWORDS[id].name)+'<small>'+SWORDS[id].damage+' base damage</small></span></button>').join('')+(game.player.scrapKingOwned?'<button data-inventory-equip="scrap-king"><img src="assets/scrap-king.png" width="32" height="48" alt=""><span>Scrap King<small>999 damage · Admin</small></span></button>':'')+'</div><button data-action="inventory-close">Back to game</button></div>');refreshWeaponPicker();updateUI();
+  showPanel('<div class="story-panel inventory-panel"><h2>Your weapons</h2><p>Choose a weapon to equip. E closes your inventory.</p><p>'+game.player.coins+' coins · '+game.player.potions+' potions · '+game.inventory.length+' find'+(game.inventory.length===1?'':'s')+'</p><div class="weapon-picker"><button data-inventory-equip="normal">'+original+'</button>'+skins.map(id=>'<button data-inventory-equip="'+id+'"><img src="assets/'+id+'.png" width="32" height="48" alt=""><span>'+escapeHTML(SWORDS[id].name)+'<small>'+SWORDS[id].damage+' base damage · '+escapeHTML(WEAPON_KITS[id].moves.sweep.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.guard.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.charge.name)+'</small><small>'+escapeHTML(WEAPON_KITS[id].ultimate.name)+'</small></span></button>').join('')+(game.player.scrapKingOwned?'<button data-inventory-equip="scrap-king"><img src="assets/scrap-king.png" width="32" height="48" alt=""><span>Scrap King<small>999 damage · Admin</small></span></button>':'')+'</div><button data-action="inventory-close">Back to game</button></div>');refreshWeaponPicker();updateUI();
 }
 function refreshWeaponPicker(){for(const b of overlay.querySelectorAll('[data-inventory-equip]')){const equipped=b.dataset.inventoryEquip==='scrap-king'?game.player.scrapKing:!game.player.scrapKing&&(b.dataset.inventoryEquip==='normal'?!game.player.weaponSkin:game.player.weaponSkin===b.dataset.inventoryEquip);b.disabled=equipped;b.setAttribute('aria-pressed',String(equipped));}}
 function closeInventory(){const previous=inventoryReturn;inventoryReturn=null;game.mode=previous.mode;if(previous.html)showPanel(previous.html);else closePanel();updateUI();}
@@ -217,7 +228,7 @@ function pause(){
 function help(){
   if(game.mode==='help'||game.mode==='admin'||game.mode==='inventory')return;
   previousMode=game.mode;game.mode='help';
-  showPanel(`<div class="story-panel instructions"><h2>A little field guide</h2><p>Rescue Uncle Bones, discover your customer’s next bounty, and protect Grandma, then save the dungeon heart across eight chapters.</p><dl><dt><kbd>W A S D</kbd> / Arrows</dt><dd>Move and face your next target.</dd><dt><kbd>SPACE</kbd></dt><dd>Wind up, strike forward, and recover. Hold for repeated swings. Hits only land in front of you.</dd><dt><kbd>E</kbd></dt><dd>Open your inventory and change weapons.</dd><dt><kbd>G</kbd></dt><dd>Open chests, talk, and use doorways.</dd><dt><kbd>SHIFT</kbd></dt><dd>Dodge an enemy’s wind-up. You can cancel your own swing to dodge.</dd><dt><kbd>F</kbd></dt><dd>Parry just before a strike. A perfect block staggers the enemy and strengthens your next swing.</dd><dt><kbd>Z</kbd></dt><dd>Open the admin panel.</dd><dt><kbd>V</kbd></dt><dd>Use your sword’s ultimate when the meter is full. Scrap King’s King’s Verdict requires an Admin unlock.</dd><dt><kbd>R</kbd></dt><dd>Heart burst. Unlock it by defeating the practice armour.</dd><dt><kbd>U</kbd></dt><dd>Hold to charge your ultimate while standing still. Hits and parries charge it too.</dd><dt><kbd>J K L</kbd></dt><dd>Sweep, Guard and Rush unlock at potential levels 1, 2 and 3.</dd><dt><kbd>C X B</kbd></dt><dd>Mending Light, Cyclone and Starcall unlock at the same three levels.</dd><dt><kbd>T</kbd></dt><dd>Summon lightning with Thunderwake hammer.</dd><dt><kbd>H</kbd></dt><dd>Drink a potion to heal 40 health.</dd><dt><kbd>ESC</kbd></dt><dd>Pause or resume.</dd></dl><p>Wooden chests: 5% rare · Iron: 15% rare · Golden: 30% rare. Named swords are very rare: 0.15% wood, 0.45% iron, 0.9% gold for any of the eleven skins. Walk to the family-shop door and press G to enter. Sell trash and buy mystery chests inside. Touch controls work too.</p><button data-action="help-close">Got it.</button></div>`);updateUI();
+  showPanel(`<div class="story-panel instructions"><h2>A little field guide</h2><p>Rescue Uncle Bones, discover your customer’s next bounty, and protect Grandma, then save the dungeon heart across eight chapters. Defeat the secret lightning god to open a lake portal into three more chapters, with six gods and the truth of Pip’s banishment.</p><dl><dt><kbd>W A S D</kbd> / Arrows</dt><dd>Move and face your next target.</dd><dt><kbd>SPACE</kbd></dt><dd>Wind up, strike forward, and recover. Hold for repeated swings. Most strikes land in front. Each weapon has its own reach, speed and effect: fire burns, ice slows, lightning chains, and Bloodmoon steals health.</dd><dt><kbd>E</kbd></dt><dd>Open your inventory and change weapons.</dd><dt><kbd>G</kbd></dt><dd>Open chests, talk, and use doorways.</dd><dt><kbd>SHIFT</kbd></dt><dd>Dodge an enemy’s wind-up. You can cancel your own swing to dodge.</dd><dt><kbd>F</kbd></dt><dd>Parry just before a strike. A perfect block staggers the enemy and strengthens your next swing.</dd><dt><kbd>Z</kbd></dt><dd>Open the admin panel.</dd><dt><kbd>V</kbd></dt><dd>Use your sword’s ultimate when the meter is full. Scrap King’s King’s Verdict requires an Admin unlock.</dd><dt><kbd>R</kbd></dt><dd>Heart burst. Unlock it by defeating the practice armour.</dd><dt><kbd>U</kbd></dt><dd>Hold to charge your ultimate while standing still. Hits and parries charge it too.</dd><dt><kbd>J K L</kbd></dt><dd>Your weapon’s attack, defence and movement skills unlock at potential levels 1, 2 and 3. Equip another sword to change all six moves.</dd><dt><kbd>C X B</kbd></dt><dd>Your weapon’s recovery, area and finisher skills unlock at the same three levels. The ability dock shows their names.</dd><dt><kbd>T</kbd></dt><dd>Summon lightning with Thunderwake hammer.</dd><dt><kbd>H</kbd></dt><dd>Drink a potion to heal 40 health.</dd><dt><kbd>ESC</kbd></dt><dd>Pause or resume.</dd></dl><p>Wooden chests: 5% rare · Iron: 15% rare · Golden: 30% rare. Named swords are very rare: 0.15% wood, 0.45% iron, 0.9% gold for any of the eleven skins. Walk to the family-shop door and press G to enter. Sell trash and buy mystery chests inside. Touch controls work too.</p><button data-action="help-close">Got it.</button></div>`);updateUI();
 }
 overlay.addEventListener('click',e=>{
   const choice=e.target.closest('[data-inventory-equip]');
@@ -229,6 +240,7 @@ overlay.addEventListener('click',e=>{
   }
   const button=e.target.closest('button[data-action]');if(!button||button.disabled)return;
   switch(button.dataset.action){
+    case 'advance-divine':game.advanceDivine();break;
     case 'begin-campaign':game.beginCampaign();break;
     case 'advance-campaign':game.advanceCampaign();break;
     case 'replay-campaign':game.replayCampaign();break;

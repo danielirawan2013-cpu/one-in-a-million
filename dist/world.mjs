@@ -1,4 +1,6 @@
-import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.3.2';
+import {REGION_STYLES} from './region-art.mjs?v=0.4.0';
+import {GOD_IDS,godArea} from './gods.mjs?v=0.4.0';
+import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.4.0';
 export const TILE=16, COLS=44, ROWS=30, WIDTH=COLS*TILE, HEIGHT=ROWS*TILE;
 export const AREAS={
   hollow:{name:'Bramble Hollow',note:'Home, sweet slightly haunted home.',caption:'Find the practice armour. Even small swings count.',palette:['#29463c','#345344','#3f614b','#6c7650'],ground:'grass',spawn:{x:352,y:340},
@@ -33,7 +35,7 @@ export const AREAS={
 };
 export function noise(x,y,seed=0){const v=Math.sin(x*127.1+y*311.7+seed*51.3)*43758.5453;return v-Math.floor(v);}
 export function makeArea(id){
-  const definition=AREAS[id]??campaignArea(CAMPAIGN_IDS.indexOf(id)+1);
+  const definition=AREAS[id]??(GOD_IDS.includes(id)?godArea(GOD_IDS.indexOf(id)+1):campaignArea(CAMPAIGN_IDS.indexOf(id)+1));
   const objects=[];
   if(id==='shop'){
     objects.push({kind:'counter',x:295,y:218,w:114,h:20,solid:true});
@@ -66,11 +68,11 @@ export function makeArea(id){
     for(const [x,y] of [[215,217],[496,218],[230,70],[481,72]])objects.push({kind:'tomb',x,y,solid:true,r:14});
     if(id==='ember')for(const [x,y] of [[199,187],[505,339],[208,329],[500,106]])objects.push({kind:'crystal',x,y,solid:false});
   }
-  return {...definition,id,objects,enemies:definition.enemies.map(e=>({...e,maxHp:e.hp,homeX:e.x,homeY:e.y,cooldown:1,stun:0,flash:0,windup:0,swingTime:0,dead:false})),chests:definition.chests.map(c=>({...c,opened:false})),npcs:definition.npcs.map(n=>({...n}))};
+  return {...definition,id,objects:REGION_STYLES[id]&&definition.ground==='stone'?objects.filter(o=>!['tomb','pillar','torch'].includes(o.kind)):objects,enemies:definition.enemies.map(e=>({...e,maxHp:e.hp,homeX:e.x,homeY:e.y,cooldown:1,stun:0,flash:0,windup:0,swingTime:0,dead:false})),chests:definition.chests.map(c=>({...c,opened:false})),npcs:definition.npcs.map(n=>({...n}))};
 }
 export function isSolid(area,x,y){
   if(x<24||x>WIDTH-24||y<24||y>HEIGHT-24)return true;
   if(area.ground!=='grass'&&(x<158||x>546||y<39))return true;
-  if(area.id==='hollow'&&x>46&&x<169&&y>227&&y<389)return true;
+  if(area.id==='hollow'&&x>46&&x<169&&y>227&&y<389&&!(area.divinePortal&&x>113&&y>296&&y<328))return true;
   return area.objects.some(o=>o.solid&&(o.kind==='counter'||o.kind==='shelf'?x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h:o.kind==='house'?x>o.x-4&&x<o.x+o.w+4&&y>o.y-8&&y<o.y+o.h:Math.abs(x-o.x)<o.r&&Math.abs(y-o.y)<o.r*.65));
 }

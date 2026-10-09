@@ -36,3 +36,6 @@ Seventeen regions, a walkable family shop, eleven very rare normal swords, parry
 
 ## Combat Expansion
 E opens weapon inventory; G interacts. Six unlockable abilities appear below the game view with keys and cooldowns. Hold U or fight to fill the ultimate meter, then V plays the equipped sword’s themed cutscene. Rescue Bones, then swing toward the lake from its right bank to summon the Lake Tempest and earn Thunderwake hammer; T calls lightning. Full screen is available through the header.
+
+## Divine continuation
+Six secret gods beyond a portal in the lake. Defeating the Lake Tempest opens a walkable stone path and portal, including for existing saves. Three extra chapters reveal Pip's demigod birth and infant banishment without replacing his human appearance or adopted family. Separate divine progress permits returning for supplies without resetting the eight-chapter expedition. Each god has a distinct telegraphed attack, elemental crown, recovered memory, and locked reward chest.

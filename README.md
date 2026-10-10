@@ -97,3 +97,7 @@ Three additional chapters contain six realms and six god fights: Rimewyrm (frost
 Pip discovers he is a banished demigod while keeping his small human appearance and adopted monster family. This optional arc preserves the original eight-chapter story. The southern portal returns to the family shop; returning or falling retains your divine checkpoint, weapons, loot, and expedition progress.
 
 Bosses now have distinct silhouettes: an ice dragon, oath judge, solar deity, moon spirit, floating memory keeper, winged sovereign, and ten distinct expedition constructs. Regions have separate authored landscapes, including frozen sky, lava channels, tide pools, floating library shelves, salvage rails and celestial stairs.
+
+## Creature artwork (v0.4.1)
+
+Nineteen creature bosses have individually authored pixel bodies, shading, and attack poses. Rimewyrm is a coiled ice wyrm; the Lake Tempest is a broad-winged thunder wyvern. The divine rulers are a two-headed oath basilisk, solar phoenix, lunar jellyfish, memory cuttlefish, and six-winged griffin. Dungeon guardians range from an archive owl and salvage scorpion to a brass minotaur and command nautilus. Creature melee attacks use their claws, jaws, or elemental power. Existing saves and combat balance are preserved.

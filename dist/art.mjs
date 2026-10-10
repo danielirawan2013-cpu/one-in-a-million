@@ -1,5 +1,5 @@
 import {paintRegionGround} from './region-art.mjs?v=0.4.0';
-import {drawBoss,BOSS_DESIGNS} from './boss-art.mjs?v=0.4.0';
+import {drawBoss,drawBossStrike,BOSS_DESIGNS} from './boss-art.mjs?v=0.4.1';
 import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.4.0';
 import {weaponSwing} from './moves.mjs?v=0.4.0';
 import {SWORDS} from './swords.mjs?v=0.4.0';
@@ -206,18 +206,16 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     if(e.dead){block(ctx,'#66746b',e.x-5,e.y-3,9,4);block(ctx,'#9a9d85',e.x-3,e.y-3,3,2);return;}
     if(e.divineCast)for(const z of e.divineCast.zones)divineZone(ctx,z,game.area.id==='skythreshold'?'#83384b':'#ffdaa0');
     const dragon=e.id==='lake-storm';
-    if(dragon){
-      drawLightningDragon(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x});
-      if(e.stormCast){ctx.strokeStyle='#e99b78';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.stormCast.x,e.stormCast.y,26,0,Math.PI*2);ctx.stroke();block(ctx,'#e99b78',e.stormCast.x-1,e.stormCast.y-8,2,16);block(ctx,'#e99b78',e.stormCast.x-8,e.stormCast.y-1,16,2);}
-    }else if(!drawBoss(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x})){shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='rowan-betrayer'?'knight':e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});}
+    if(dragon&&e.stormCast){ctx.strokeStyle='#e99b78';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.stormCast.x,e.stormCast.y,26,0,Math.PI*2);ctx.stroke();block(ctx,'#e99b78',e.stormCast.x-1,e.stormCast.y-8,2,16);block(ctx,'#e99b78',e.stormCast.x-8,e.stormCast.y-1,16,2);}
+    if(!drawBoss(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x})){shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='rowan-betrayer'?'knight':e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});}
     if(e.freeze||e.root||e.burn){const color=e.freeze?'#b4edf1':e.root?'#b8cf86':'#f6a157';block(ctx,color,e.x-10,e.y+2,20,2);for(let i=0;i<3;i++)block(ctx,color,e.x-9+i*8,e.y-(e.freeze?17:5),2,e.freeze?18:8);}
     if(e.windup||e.swingTime){
       const face=e.attackFacing,angle=Math.atan2(face.y,face.x),radius=e.kind==='boss'?38:28;
-      if(dragon){ctx.strokeStyle=e.windup?'#edb18a':'#c4f4ec';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,radius,angle-.65,angle+.65);ctx.stroke();if(e.swingTime)pixelLine(ctx,'#b9f5ed',e.x,e.y-12,e.x+face.x*radius,e.y+face.y*radius-12,3);}
+      if(drawBossStrike(ctx,e)){}
       else if(e.windup){ctx.strokeStyle='#d78670';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,radius,angle-.65,angle+.65);ctx.stroke();blade(ctx,e.x+Math.cos(angle-1.2)*6,e.y-8+Math.sin(angle-1.2)*6,angle-1.2,{length:e.kind==='boss'?29:21,hand:false});}
       else{const progress=1-e.swingTime/.18;blade(ctx,e.x+face.x*4,e.y-8+face.y*4,angle-1+progress*1.8,{length:e.kind==='boss'?29:21,hand:false});}
     }
-    if(e.hp<e.maxHp||e.kind==='boss'){const w=dragon?68:e.kind==='boss'?42:24,top=dragon?94:BOSS_DESIGNS[e.id]?.height?BOSS_DESIGNS[e.id].height+7:e.kind==='boss'?40:23;block(ctx,'#252b2d',e.x-w/2,e.y-top,w,4);block(ctx,dragon?'#91dce9':e.kind==='boss'?'#cf8972':'#b5c396',e.x-w/2+1,e.y-top+1,Math.round((w-2)*e.hp/e.maxHp),2);}
+    if(e.hp<e.maxHp||e.kind==='boss'){const w=BOSS_DESIGNS[e.id]?Math.min(70,Math.round(BOSS_DESIGNS[e.id].width*.65)):e.kind==='boss'?42:24,top=BOSS_DESIGNS[e.id]?BOSS_DESIGNS[e.id].height+7:e.kind==='boss'?40:23;block(ctx,'#252b2d',e.x-w/2,e.y-top,w,4);block(ctx,dragon?'#91dce9':e.kind==='boss'?'#cf8972':'#b5c396',e.x-w/2+1,e.y-top+1,Math.round((w-2)*e.hp/e.maxHp),2);}
   }}))];
   const p=game.player;
   entities.push({sortY:p.y,draw:()=>{

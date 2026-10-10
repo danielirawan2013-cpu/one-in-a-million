@@ -7,7 +7,7 @@ import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.4.0';
 import {Adventure} from './engine.mjs?v=0.4.0';
 import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.4.0';
 import {WIDTH,HEIGHT} from './world.mjs?v=0.4.0';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.4.0';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.4.1';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');

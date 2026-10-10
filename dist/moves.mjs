@@ -1,7 +1,7 @@
-import {SWORDS} from './swords.mjs?v=0.4.0';
-import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.4.0';
-import {isSolid} from './world.mjs?v=0.4.0';
-import {ultimateKey} from './ultimates.mjs?v=0.4.0';
+import {SWORDS} from './swords.mjs?v=0.5.0';
+import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.5.0';
+import {isSolid} from './world.mjs?v=0.5.0';
+import {ultimateKey} from './ultimates.mjs?v=0.5.0';
 
 export const ABILITY_KEYS=['sweep','guard','charge','mend','cyclone','stars'];
 export const ABILITY_LEVELS={sweep:1,guard:2,charge:3,mend:1,cyclone:2,stars:3};
@@ -12,6 +12,12 @@ const arc=o=>move('','arc',o),ring=o=>move('','ring',o),line=o=>move('','line',{
 // Every row is a fighting style, not a recolour. J/K/L and C/X/B keep their
 // existing unlocks; equipment changes their geometry, timing and effects.
 export const WEAPON_KITS={
+  rimecrown:kit({reach:46,halfAngle:.32,slow:2,cooldown:.48},['Crown of Ice','Wyrm Scales','Frostcoil','Thawing Heart','Frozen Teeth','Winter’s Grasp'],[ring({radius:80,inner:28,freeze:.8}),ward({aura:'slow',duration:5}),dash({travel:100,trail:true,freeze:.6}),heal({heal:24,guard:2}),line({range:180,width:8,repeat:3,delay:.2,freeze:.5}),field({radius:65,offset:75,duration:4,pulses:6,slow:3})],move('Rimewyrm’s Last Winter','field',{radius:190,duration:4,pulses:7,freeze:.8,scale:.7})),
+  oathbreaker:kit({reach:44,root:.25,halfAngle:.65},['Binding Chain','Broken Promise','Tribunal Step','Mercy Clause','Unbound Circle','Final Sentence'],[chain({range:140,jumps:3,root:1.2}),ward({duration:3,charge:20}),dash({travel:55,root:1.8,scale:2.8}),heal({heal:18,charge:15}),ring({radius:95,knock:180}),line({range:210,width:12,root:2,scale:3})],move('No More Binding Oaths','chain',{range:260,jumps:9,root:2.5,scale:4})),
+  solstice:kit({reach:40,burn:2,heal:1,cooldown:.56},['Solar Eruption','Phoenix Mantle','Dawnflight','Returned Dawn','Flare Crown','Stolen Suns'],[move('','eruption',{radius:35,pulses:3,burn:3,scale:1}),ward({aura:'burn',heal:8}),dash({travel:85,trail:true,burn:2}),heal({heal:30,field:true,burn:2}),ring({radius:100,inner:35,burn:3,scale:2}),move('','meteors',{radius:40,pulses:4,range:180,burn:3})],move('A Million Dawns','eruption',{radius:60,pulses:6,burn:5,scale:1.8})),
+  tidemirror:kit({reach:40,halfAngle:1.5,cooldown:.36},['Returning Tide','Moon Reflection','Tidal Slip','Stillwater','Moonpool','Twin Currents'],[ring({radius:88,inner:25,pull:75}),ward({invulnerable:.7}),dash({travel:80,invulnerable:.5}),heal({heal:22,invulnerable:.35}),field({radius:85,offset:55,pull:80,slow:2}),line({range:170,width:24,repeat:2,delay:.35,pull:35})],move('The True Reflection','ring',{radius:210,inner:35,pull:200,scale:4,invulnerable:1})),
+  recollection:kit({reach:38,phase:.1,cooldown:.38},['Remembered Cut','Keeper’s Page','Unwritten Step','Homeward Memory','Echoes of Home','Lost Chapters'],[line({range:145,width:18,repeat:3,delay:.25}),ward({duration:2,invulnerable:.5,charge:15}),dash({travel:110,trail:true}),heal({heal:20,charge:20}),move('','phantoms',{range:150,radius:35,repeat:3,scale:.9}),field({radius:70,offset:60,slow:2,duration:4,pulses:5})],move('Every Life Remembered','phantoms',{range:240,radius:60,repeat:7,scale:1.5,invulnerable:1})),
+  heavensfall:kit({reach:49,halfAngle:.7,knock:100,cooldown:.6},['Crown Sever','Free Sky','Sovereign Fall','A Door Home','Broken Throne','Heaven’s Answer'],[arc({radius:125,halfAngle:.5,scale:2.2}),ward({duration:4,aura:'shock'}),dash({travel:65,radius:75,knock:200,scale:3}),heal({heal:25,guard:2}),ring({radius:135,knock:250,shock:.6}),line({range:250,width:20,shock:1,scale:3})],move('Heaven Without Chains','line',{range:360,width:55,scale:6,shock:1.5,knock:250})),
   battered:kit({},['Sweep','Guard','Rush','Mending Light','Cyclone','Starcall'],[arc(),ward(),dash({scale:2}),heal(),ring({radius:52,scale:1.3}),ring({radius:100,scale:2})],move('Underdog Awakening','ring',{radius:150,scale:3})),
   ironshort:kit({reach:39,halfAngle:.35,cooldown:.4},['Iron Thrust','Steel Stance','Shieldbreaker','Second Wind','Crosscut','Piercing Verdict'],[line({range:85}),ward({duration:4}),dash({travel:45,scale:2.6}),heal({heal:15,guard:2}),arc({radius:45,scale:2.2}),line({range:180,scale:3})],move('Ironheart Verdict','line',{range:240,width:24,scale:5})),
   classicdawn:kit({reach:38,halfAngle:1.2},['First Light','Warm Shelter','Bright Advance','Kindle Heart','Sunwheel','Sunrise'],[arc({heal:3}),ward({heal:10}),dash({travel:65}),heal({heal:25}),ring({radius:60}),line({range:165,width:30})],move('First-Light Reckoning','ring',{radius:150,scale:3,heal:30})),
@@ -35,10 +41,9 @@ export function weaponColor(p){return p.scrapKing?'#e4ab6c':SWORDS[p.weaponSkin]
 const living=g=>g.area.enemies.filter(e=>!e.dead&&!e.dormant);
 function hit(g,e,spec,damage){
   if(e.dead||e.dormant)return;
-  const before=e.hp;g.damageEnemy(e,damage,{charge:spec.chargeHit!==false});
-  const dealt=before-e.hp,p=g.player;
+  const dealt=g.damageEnemy(e,damage,{charge:spec.chargeHit!==false})??0,p=g.player;
   if(spec.drain)p.hp=Math.min(100,p.hp+Math.ceil(dealt*spec.drain));
-  if(e.dead)return;
+  if(e.dead||e.phaseRest)return;
   for(const key of ['slow','freeze','root','shock'])if(spec[key])e[key]=Math.max(e[key]??0,spec[key]);
   if(spec.burn)e.burn={time:spec.burn,next:.5,damage:Math.max(1,Math.round(damage*.18))};
   if(spec.knock){const d=Math.max(1,distance(e,p));e.knockback={x:(e.x-p.x)/d*spec.knock,y:(e.y-p.y)/d*spec.knock,time:.2};}

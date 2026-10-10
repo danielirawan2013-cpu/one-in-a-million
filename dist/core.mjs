@@ -1,6 +1,6 @@
-import {GOD_IDS} from './gods.mjs?v=0.4.0';
-import {CAMPAIGN_IDS} from './campaign.mjs?v=0.4.0';
-import {SWORDS,SWORD_IDS,SWORD_CHANCE_WITHIN_RARE} from './swords.mjs?v=0.4.0';
+import {GOD_IDS} from './gods.mjs?v=0.5.0';
+import {CAMPAIGN_IDS} from './campaign.mjs?v=0.5.0';
+import {SWORDS,SWORD_IDS,SWORD_CHANCE_WITHIN_RARE} from './swords.mjs?v=0.5.0';
 export const LOOT_ODDS = Object.freeze({wood:[65,30,5],iron:[35,50,15],gold:[10,60,30]});
 export const LOOT = {
   trash:[{id:'sock',name:'One lonely sock',value:3},{id:'potato',name:'Questionable potato',value:2},{id:'rock',name:'“Legendary” rock',value:4},{id:'scrap',name:'Bent sword scrap',value:5}],
@@ -30,7 +30,7 @@ export function moveBody(body,dx,dy,isSolid){
 }
 export const SAVE_KEY='one-in-a-million:v1';
 export function validSave(s){
-  return !!s && [1,2,3].includes(s.version) && ['hollow','moss','crypt','thorn','tower','ember','shop',...CAMPAIGN_IDS,...GOD_IDS].includes(s.area)
+  return !!s && [1,2,3].includes(s.version) && ['oathhall','hollow','moss','crypt','thorn','tower','ember','shop',...CAMPAIGN_IDS,...GOD_IDS].includes(s.area)
     && s.player && ['x','y','hp','xp','coins','potions','weapon'].every(k=>Number.isFinite(s.player[k]))
     && s.player.hp>0 && s.player.hp<=100 && s.player.x>=0 && s.player.x<704 && s.player.y>=0 && s.player.y<480
     && s.player.xp>=0 && s.player.coins>=0 && s.player.potions>=0 && s.player.weapon>=5 && s.player.weapon<=12
@@ -48,6 +48,8 @@ export function validSave(s){
     && (s.divineDone===undefined||typeof s.divineDone==='boolean')
     && (s.demigodRevealed===undefined||typeof s.demigodRevealed==='boolean')
     && (!GOD_IDS.includes(s.area)||(s.divineStep===GOD_IDS.indexOf(s.area)+1&&s.defeated.includes('lake-storm')))
+    && (s.betrayalStage===undefined||(Number.isInteger(s.betrayalStage)&&s.betrayalStage>=0&&s.betrayalStage<=6))
+    && (s.area!=='oathhall'||(s.campaignDone===true&&s.betrayalStage>=1))
     && typeof s.rescued==='boolean'
     && (s.version===1||['returned','knightMet','familyProof','truthRevealed','chapter2Started','storyDone'].every(k=>typeof s[k]==='boolean'));
 }

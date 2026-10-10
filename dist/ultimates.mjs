@@ -1,4 +1,10 @@
 export const ULTIMATES={
+  rimecrown:{title:'Rimewyrm’s Last Winter',motif:'ice',line:'The dragon’s winter answers your hand.'},
+  oathbreaker:{title:'No More Binding Oaths',motif:'fang',line:'A promise freely chosen.'},
+  solstice:{title:'A Million Dawns',motif:'sun',line:'Every stolen dawn goes home.'},
+  tidemirror:{title:'The True Reflection',motif:'moon',line:'Let the false reflections break.'},
+  recollection:{title:'Every Life Remembered',motif:'wisp',line:'No one is erased again.'},
+  heavensfall:{title:'Heaven Without Chains',motif:'star',line:'No crown decides who deserves a home.'},
   thunderhammer:{title:'Tempest Judgement',motif:'bolt',line:'The storm is in your hands.'},
   dawnblade:{title:'Daybreak Judgement',motif:'sun',line:'A dawn worth fighting for.'},
   moonfang:{title:'Lunar Judgement',motif:'moon',line:'The night remembers your name.'},

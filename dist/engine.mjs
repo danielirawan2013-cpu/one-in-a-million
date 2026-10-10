@@ -1,15 +1,16 @@
-import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.4.0';
-import {weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.4.0';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.4.0';
-import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.4.0';
-import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.4.0';
-import {SWORDS} from './swords.mjs?v=0.4.0';
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.4.0';
-import {makeArea,isSolid} from './world.mjs?v=0.4.0';
+import {ROWAN_PHASES,tickRowan,tickRemnant,restoreRowanWaves,advanceRowan,checkBetrayalClear} from './betrayal.mjs?v=0.5.0';
+import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.5.0';
+import {weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.5.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.0';
+import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.5.0';
+import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.5.0';
+import {SWORDS,GOD_SWORD_DROPS} from './swords.mjs?v=0.5.0';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.5.0';
+import {makeArea,isSolid} from './world.mjs?v=0.5.0';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
-    this.random=random;this.onEvent=onEvent;this.mode='title';this.inventory=[];this.opened=new Set();this.defeated=new Set();this.rescued=false;this.returned=false;this.knightMet=false;this.familyProof=false;this.truthRevealed=false;this.chapter2Started=false;this.storyDone=false;this.campaignStep=0;this.campaignDone=false;this.divineStep=0;this.divineDone=false;this.demigodRevealed=false;
+    this.random=random;this.onEvent=onEvent;this.mode='title';this.inventory=[];this.opened=new Set();this.defeated=new Set();this.rescued=false;this.returned=false;this.knightMet=false;this.familyProof=false;this.truthRevealed=false;this.chapter2Started=false;this.storyDone=false;this.campaignStep=0;this.campaignDone=false;this.divineStep=0;this.divineDone=false;this.demigodRevealed=false;this.betrayalStage=0;
     this.player={x:352,y:340,hp:100,xp:0,coins:0,potions:3,weapon:5,scrapKing:false,scrapKingOwned:false,ultimateCharge:0,weaponSkin:null,specialUnlocked:false,specialCd:0,lightningCd:0,sweepCd:0,guardCd:0,chargeCd:0,guardTime:0,mendCd:0,cycloneCd:0,starsCd:0,boots:false,pendant:false,facing:{x:0,y:1},attackFacing:{x:0,y:1},attackHit:false,attackTime:0,attackCd:0,parryTime:0,parryCd:0,riposteTime:0,parryFacing:{x:0,y:1},powerCd:0,dodgeTime:0,dodgeCd:0,invulnerable:0,hurtFlash:0};
     this.area=makeArea('hollow');this.effects=[];this.particles=[];this.time=0;this.shake=0;this.specialScene=null;this.pendingMoves=[];this.hint=null;this.dirty=true;
   }
@@ -21,24 +22,28 @@ export class Adventure{
   start(){this.mode='playing';this.emit('started');}
   snapshot(){
     const {x,y,hp,xp,coins,potions,weapon,scrapKing,scrapKingOwned,ultimateCharge,weaponSkin,specialUnlocked,boots,pendant}=this.player;
-    return {version:3,divineStep:this.divineStep,divineDone:this.divineDone,demigodRevealed:this.demigodRevealed,campaignStep:this.campaignStep,campaignDone:this.campaignDone,area:this.area.id,player:{x,y,hp,xp,coins,potions,weapon,scrapKing,scrapKingOwned,ultimateCharge,weaponSkin,specialUnlocked,boots,pendant},inventory:this.inventory,opened:[...this.opened],defeated:[...this.defeated],rescued:this.rescued,returned:this.returned,knightMet:this.knightMet,familyProof:this.familyProof,truthRevealed:this.truthRevealed,chapter2Started:this.chapter2Started,storyDone:this.storyDone};
+    return {version:3,betrayalStage:this.betrayalStage,divineStep:this.divineStep,divineDone:this.divineDone,demigodRevealed:this.demigodRevealed,campaignStep:this.campaignStep,campaignDone:this.campaignDone,area:this.area.id,player:{x,y,hp,xp,coins,potions,weapon,scrapKing,scrapKingOwned,ultimateCharge,weaponSkin,specialUnlocked,boots,pendant},inventory:this.inventory,opened:[...this.opened],defeated:[...this.defeated],rescued:this.rescued,returned:this.returned,knightMet:this.knightMet,familyProof:this.familyProof,truthRevealed:this.truthRevealed,chapter2Started:this.chapter2Started,storyDone:this.storyDone};
   }
   restore(data){
     if(!validSave(data))return false;
-    this.inventory=data.inventory.map(i=>({...i}));this.opened=new Set(data.opened);this.defeated=new Set(data.defeated);this.rescued=data.rescued;this.returned=!!data.returned;this.knightMet=!!data.knightMet;this.familyProof=!!data.familyProof;this.truthRevealed=!!data.truthRevealed;this.chapter2Started=!!data.chapter2Started;this.storyDone=!!data.storyDone;this.campaignStep=data.campaignStep??0;this.campaignDone=!!data.campaignDone;this.divineStep=data.divineStep??0;this.divineDone=!!data.divineDone;this.demigodRevealed=!!data.demigodRevealed;
+    this.inventory=data.inventory.map(i=>({...i}));this.opened=new Set(data.opened);this.defeated=new Set(data.defeated);this.rescued=data.rescued;this.returned=!!data.returned;this.knightMet=!!data.knightMet;this.familyProof=!!data.familyProof;this.truthRevealed=!!data.truthRevealed;this.chapter2Started=!!data.chapter2Started;this.storyDone=!!data.storyDone;this.campaignStep=data.campaignStep??0;this.campaignDone=!!data.campaignDone;this.divineStep=data.divineStep??0;this.divineDone=!!data.divineDone;this.demigodRevealed=!!data.demigodRevealed;this.betrayalStage=data.betrayalStage??0;
     for(const key of ['x','y','hp','xp','coins','potions','weapon','boots','pendant'])this.player[key]=data.player[key];
     this.player.scrapKing=data.player.scrapKing===true;this.player.scrapKingOwned=!!data.player.scrapKingOwned||this.player.scrapKing;this.player.ultimateCharge=data.player.ultimateCharge??0;this.player.weaponSkin=data.player.weaponSkin??null;this.player.specialUnlocked=data.player.specialUnlocked===true;
-    this.loadArea(data.area,null);this.mode=this.area.divineStep?'playing':this.campaignDone||this.storyDone&&!this.campaignStep?'complete':this.returned&&!this.chapter2Started?'dialog':'playing';this.emit('restored');return true;
+    this.loadArea(data.area,null);this.mode=this.area.id==='oathhall'?(this.betrayalStage===1?'dialog':'playing'):this.area.divineStep?'playing':this.campaignDone||this.storyDone&&!this.campaignStep?'complete':this.returned&&!this.chapter2Started?'dialog':'playing';this.emit('restored');return true;
   }
   loadArea(id,spawn){
     this.area=makeArea(id);if(id==='hollow'&&this.defeated.has('storm-summoned')){this.area.enemies.push(lightningBoss());if(this.defeated.has('lake-storm')&&!this.opened.has('storm-hammer'))this.area.chests.push({id:'storm-hammer',type:'gold',x:190,y:379,loot:HAMMER_LOOT});}if(id==='hollow'&&this.defeated.has('lake-storm'))this.openDivinePortal(false);if(GOD_IDS.includes(id))this.divineStep=GOD_IDS.indexOf(id)+1;if(spawn){this.player.x=spawn.x;this.player.y=spawn.y;}
     if(isSolid(this.area,this.player.x,this.player.y)){this.player.x=this.area.spawn.x;this.player.y=this.area.spawn.y;}
     for(const e of this.area.enemies)e.dead=this.defeated.has(e.id);
+    if(GOD_IDS.includes(id)&&this.defeated.has(id+'-god'))this.grantGodSword(id);
+    if(id==='hollow')for(const realm of GOD_IDS)if(this.defeated.has(realm+'-god'))this.grantGodSword(realm);
     for(const c of this.area.chests)c.opened=this.opened.has(c.id);
     if(CAMPAIGN_IDS.includes(id)){this.campaignStep=CAMPAIGN_IDS.indexOf(id)+1;this.area.npcs.push({id:'ally',kind:'knight',x:412,y:405,label:'Talk to Rowan'});}
     if(id==='hollow'&&this.returned)this.area.npcs.push({id:'bones-home',kind:'skeleton',x:294,y:335,label:'Talk to Uncle Bones'});
     if(id==='hollow'&&this.storyDone)this.area.npcs=this.area.npcs.filter(n=>n.id!=='customer');
-    if(id==='hollow'&&this.storyDone)this.area.npcs.push({id:'grandma-home',kind:'dragon',x:404,y:302,label:'Talk to Grandma'},{id:'ally',kind:'knight',x:436,y:338,label:'Talk to your knight friend'});
+    if(id==='hollow'&&this.storyDone&&this.betrayalStage!==6)this.area.npcs.push({id:'grandma-home',kind:'dragon',x:404,y:302,label:'Talk to Grandma'},{id:'ally',kind:'knight',x:436,y:338,label:'Talk to your knight friend'});
+    if(id==='hollow'&&this.storyDone&&this.betrayalStage===6)this.area.npcs.push({id:'grandma-home',kind:'dragon',x:404,y:302,label:'Talk to Grandma'});
+    if(id==='oathhall')restoreRowanWaves(this);
     if(id==='ember'){this.area.enemies.find(e=>e.id==='collector').dormant=!this.truthRevealed;if(this.truthRevealed){const ally=this.area.npcs.find(n=>n.id==='rowan');ally.id='ally';ally.x=471;ally.y=390;}}
     this.player.invulnerable=1.1;this.player.attackTime=0;this.player.attackCd=0;this.player.dodgeTime=0;this.player.parryTime=0;this.player.riposteTime=0;this.player.guardTime=0;this.specialScene=null;this.pendingMoves=[];this.player.weaponWard=null;this.effects=[];this.particles=[];this.hint=null;this.emit('area',{area:id});
   }
@@ -81,6 +86,8 @@ export class Adventure{
         if(e.stormCast){e.stormCast.time-=dt;if(e.stormCast.time<=0){const strike=e.stormCast;e.stormCast=null;e.stormCd=2.5;this.effects.push({kind:'lightning',x:strike.x,y:strike.y,life:.45,maxLife:.45,r:28,color:'#91dce9'});this.burst(strike.x,strike.y,'#91dce9',24);if(!p.invulnerable&&distance(p,strike)<26){p.hp=Math.max(0,p.hp-(p.guardTime?9:18));p.invulnerable=.65;this.emit('hurt');if(!p.hp){this.mode='dead';this.emit('death');return;}}}}
         else if(!e.stormCd&&d<230)e.stormCast={x:p.x,y:p.y,time:.85};
       }
+      if(e.id==='rowan-betrayer'){const busy=tickRowan(this,e,dt);if(this.mode==='dead')return;if(busy)continue;}
+      if(e.remnant){tickRemnant(this,e,dt);if(this.mode==='dead')return;continue;}
       if(e.divine){tickDivine(this,e,dt);if(this.mode==='dead')return;}
       if(e.freeze||e.shock){continue;}
       if(e.knockback){moveBody(e,e.knockback.x*dt,e.knockback.y*dt,(x,y)=>isSolid(this.area,x,y));e.knockback.time-=dt;if(e.knockback.time<=0)e.knockback=null;}
@@ -114,6 +121,7 @@ export class Adventure{
       }
     }
     if(p.dodgeTime){this.particles.push({kind:'trail',x:p.x,y:p.y-5,vx:0,vy:0,color:'#b5d8cf',life:.18,size:3});}
+    checkBetrayalClear(this);
     const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.exits];
     this.hint=options.filter(o=>distance(o,p)<31).sort((a,b)=>distance(a,p)-distance(b,p))[0]||null;
   }
@@ -126,12 +134,17 @@ export class Adventure{
     this.dirty=true;
   }
   damageEnemy(enemy,damage,{charge=true}={}){
-    if(enemy.dead||enemy.dormant)return;
+    if(enemy.dead||enemy.dormant||enemy.phaseRest)return 0;
+    if(enemy.id==='rowan-betrayer'&&enemy.guardTime)damage=Math.ceil(damage*.5);
+    const dealt=Math.min(enemy.hp,damage);
     if(charge&&this.mode!=='special')this.player.ultimateCharge=Math.min(100,this.player.ultimateCharge+12);enemy.hp=Math.max(0,enemy.hp-damage);enemy.stun=enemy.kind==='boss'?.06:.16;enemy.flash=.1;if(enemy.kind!=='boss')enemy.windup=0;
     const d=Math.max(1,distance(enemy,this.player));enemy.knockback={x:(enemy.x-this.player.x)/d*65,y:(enemy.y-this.player.y)/d*65,time:.12};this.shake=Math.max(this.shake,1.2);
+    if(enemy.kind==='boss')this.effects.push({kind:'boss-impact',x:enemy.x,y:enemy.y-16,life:.45,maxLife:.45,color:enemy.color??'#e5c899'});
     this.effects.push({kind:'impact',x:enemy.x,y:enemy.y-10,life:.18,maxLife:.18,r:this.player.scrapKing?16:10,color:this.player.scrapKing?'#e4ab6c':SWORDS[this.player.weaponSkin]?.color??'#f5e4b6'});
     this.effects.push({kind:'number',x:enemy.x,y:enemy.y-20,text:String(damage),life:.6,maxLife:.6,color:'#f7d58e'});this.burst(enemy.x,enemy.y,'#b5b6c0',7);
-    if(!enemy.hp){enemy.dead=true;this.effects.push({kind:'shatter',x:enemy.x,y:enemy.y-10,life:.55,maxLife:.55,r:enemy.kind==='boss'?42:24,color:'#adc4c7'});this.burst(enemy.x,enemy.y-10,'#a8b8b4',enemy.kind==='boss'?32:16);this.defeated.add(enemy.id);this.player.coins+=enemy.coins;this.gainResolve(enemy.xp);this.emit('defeated',{id:enemy.id,name:enemy.name});if(enemy.id==='lake-storm'){this.openDivinePortal();if(this.inventory.length<200){this.inventory.push({...HAMMER_LOOT});this.player.weaponSkin=HAMMER_LOOT.skin;this.opened.add('storm-hammer');this.emit('hammer-earned');}else{this.area.chests.push({id:'storm-hammer',type:'gold',x:enemy.x,y:enemy.y,loot:HAMMER_LOOT});this.emit('message',{text:'The Tempest dropped Thunderwake! Make room, then open its chest.'});}}}
+    if(!enemy.hp&&enemy.id==='rowan-betrayer'&&advanceRowan(this,enemy))return dealt;
+    if(!enemy.hp){enemy.cast=null;enemy.dead=true;this.effects.push({kind:enemy.id==='rowan-betrayer'?'parry':'shatter',x:enemy.x,y:enemy.y-10,life:.55,maxLife:.55,r:enemy.kind==='boss'?42:24,color:'#adc4c7'});this.burst(enemy.x,enemy.y-10,'#a8b8b4',enemy.kind==='boss'?32:16);this.defeated.add(enemy.id);this.player.coins+=enemy.coins;this.gainResolve(enemy.xp);this.emit('defeated',{id:enemy.id,name:enemy.name});if(enemy.divine)this.grantGodSword(this.area.id);if(enemy.id==='lake-storm'){this.openDivinePortal();if(this.inventory.length<200){this.inventory.push({...HAMMER_LOOT});this.player.weaponSkin=HAMMER_LOOT.skin;this.opened.add('storm-hammer');this.emit('hammer-earned');}else{this.area.chests.push({id:'storm-hammer',type:'gold',x:enemy.x,y:enemy.y,loot:HAMMER_LOOT});this.emit('message',{text:'The Tempest dropped Thunderwake! Make room, then open its chest.'});}}}
+    return dealt;
   }
   attack(){
     const p=this.player;if(this.mode!=='playing'||p.attackCd)return false;
@@ -182,6 +195,7 @@ export class Adventure{
   }
   interact(){
     if(this.mode!=='playing')return false;
+    checkBetrayalClear(this);
     const options=[...this.area.chests.filter(c=>!c.opened),...this.area.npcs,...this.exits];
     const o=options.filter(o=>distance(o,this.player)<33).sort((a,b)=>distance(a,this.player)-distance(b,this.player))[0];
     if(!o){this.emit('message',{text:'Get a little closer to a chest, doorway, or family member.'});return false;}
@@ -222,6 +236,8 @@ export class Adventure{
     if(o.id==='customer'){this.mode='dialog';this.emit(this.returned?'knight-customer':'knight-intro');return true;}
     if(o.id==='portrait'){this.mode='dialog';if(!this.defeated.has('archivist')){this.emit('portrait-locked');return true;}this.familyProof=true;this.emit('family-proof');return true;}
     if(o.id==='rowan'){this.mode='dialog';if(!this.familyProof){this.emit('message',{text:'Bring the family portrait from the archive first.'});this.mode='playing';return false;}this.emit('reveal');return true;}
+    if(o.id==='rowan-aftermath'){this.mode='dialog';this.emit('betrayal-aftermath');return true;}
+    if(o.id==='ally'&&this.campaignDone&&this.betrayalStage<6)return this.beginBetrayal();
     if(o.id==='ally'){this.mode='dialog';this.emit('ally');return true;}
     if(o.id==='grandma'){
       this.mode='dialog';
@@ -244,7 +260,7 @@ export class Adventure{
   beginCampaign(){if(!this.storyDone||this.campaignDone)return false;const next=this.campaignStep||1;this.loadArea(EPISODES[next-1].id,{x:352,y:414});this.player.hp=100;this.player.potions=Math.max(3,this.player.potions);this.mode='dialog';this.emit('campaign-arrival',{episode:EPISODES[next-1]});return true;}
   advanceCampaign(){if(!this.area.campaignStep||!this.defeated.has(this.area.id+'-read'))return false;if(this.area.campaignStep===EPISODES.length){this.campaignDone=true;this.loadArea('hollow',{x:330,y:310});this.mode='complete';this.emit('campaign-complete');return true;}const next=this.area.campaignStep+1;this.loadArea(EPISODES[next-1].id,{x:352,y:414});this.player.hp=Math.min(100,this.player.hp+35);this.player.potions=Math.max(2,this.player.potions);this.mode='dialog';this.emit('campaign-arrival',{episode:EPISODES[next-1]});return true;}
   buyMysteryChest(){if(this.inventory.length>=200){this.emit('message',{text:'Your satchel is full. Sell some junk first.'});return false;}if(this.player.coins<50)return false;this.player.coins-=50;const chest={id:'shop-crate-'+this.opened.size,type:'gold',x:this.player.x,y:this.player.y,opened:false};this.area.chests.push(chest);const previous=this.mode;this.mode='playing';this.interact();this.mode=previous;return true;}
-  replayCampaign(){if(!this.campaignDone)return false;for(const id of [...this.defeated])if(CAMPAIGN_IDS.some(prefix=>id.startsWith(prefix+'-')))this.defeated.delete(id);for(const id of [...this.opened])if(CAMPAIGN_IDS.some(prefix=>id.startsWith(prefix+'-')))this.opened.delete(id);this.campaignDone=false;this.campaignStep=1;return this.beginCampaign();}
+  replayCampaign(){if(!this.campaignDone)return false;this.betrayalStage=0;for(const id of [...this.defeated])if(id==='rowan-betrayer'||id.startsWith('oath-guard-'))this.defeated.delete(id);for(const id of [...this.defeated])if(CAMPAIGN_IDS.some(prefix=>id.startsWith(prefix+'-')))this.defeated.delete(id);for(const id of [...this.opened])if(CAMPAIGN_IDS.some(prefix=>id.startsWith(prefix+'-')))this.opened.delete(id);this.campaignDone=false;this.campaignStep=1;return this.beginCampaign();}
   openDivinePortal(announce=true){
     if(this.area.id!=='hollow'||!this.defeated.has('lake-storm'))return false;
     this.area.divinePortal=true;
@@ -261,5 +277,20 @@ export class Adventure{
     if(next>GOD_IDS.length){this.divineDone=true;this.loadArea('hollow',{x:181,y:310});this.mode='dialog';this.emit('divine-complete');return true;}
     this.loadArea(GOD_IDS[next-1],{x:352,y:414});this.player.hp=Math.min(100,this.player.hp+35);this.player.potions=Math.max(2,this.player.potions);this.mode='dialog';this.emit('divine-arrival',{episode:GOD_EPISODES[next-1]});return true;
   }
-  recover(){this.player.hp=100;this.player.attackCd=0;this.player.powerCd=0;this.loadArea('hollow',{x:352,y:340});this.mode='playing';this.emit('recovered');}
+  grantGodSword(areaId){
+    const skin=GOD_SWORD_DROPS[areaId];if(!skin)return false;
+    const id='divine-sword-'+skin;if(this.opened.has(id))return false;
+    const sword=SWORDS[skin],loot={id:skin,skin,name:sword.name,rarity:'rare',value:90};
+    if(this.inventory.length<200){this.inventory.push(loot);this.opened.add(id);if(sword.damage>=(SWORDS[this.player.weaponSkin]?.damage??this.player.weapon)&&!this.player.scrapKing)this.player.weaponSkin=skin;this.emit('god-sword-earned',{loot,god:sword.god});}
+    else if(!this.area.chests.some(c=>c.id===id)){const index=GOD_IDS.indexOf(areaId);this.area.chests.push({id,type:'gold',x:this.area.id==='hollow'?290+(index%3)*45:352,y:this.area.id==='hollow'?386+Math.floor(index/3)*32:214,loot});this.emit('message',{text:sword.god+' dropped '+sword.name+'. Your satchel is full. Make room, then open the sword chest.'});}
+    return true;
+  }
+  beginBetrayal(){
+    if(!this.campaignDone||this.betrayalStage===6)return false;
+    const first=this.betrayalStage===0;if(first){this.betrayalStage=1;this.player.hp=100;this.player.potions=Math.max(5,this.player.potions);this.player.ultimateCharge=100;}
+    this.loadArea('oathhall',{x:352,y:390});this.mode=this.betrayalStage===1?'dialog':'playing';this.emit(this.betrayalStage===1?'betrayal-arrival':this.betrayalStage===5?'betrayal-aftermath':'betrayal-resumed');return true;
+  }
+  startBetrayalDuel(){if(this.area.id!=='oathhall'||this.betrayalStage!==1)return false;this.betrayalStage=2;restoreRowanWaves(this);this.mode='playing';this.emit('betrayal-started');return true;}
+  finishBetrayal(){if(this.area.id!=='oathhall'||this.betrayalStage!==5||this.area.enemies.some(e=>!e.dead))return false;this.betrayalStage=6;this.loadArea('hollow',{x:330,y:310});this.mode='playing';this.emit('betrayal-complete');return true;}
+  recover(){this.player.hp=100;this.player.attackCd=0;this.player.powerCd=0;this.player.powerCd=0;this.player.specialCd=0;this.loadArea(this.area.id==='oathhall'?'oathhall':'hollow',this.area.id==='oathhall'?{x:352,y:390}:{x:352,y:340});if(this.area.id==='oathhall')this.player.potions=Math.max(2,this.player.potions);this.mode='playing';this.emit('recovered');}
 }

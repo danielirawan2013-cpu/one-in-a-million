@@ -51,7 +51,9 @@ export function drawLightningDragon(c,e,time,{reducedMotion=false,flip=false,app
   c.restore();
 }
 
+const divineStyles={rimecrown:'frostbite',oathbreaker:'dragonfang',solstice:'emberfang',tidemirror:'moonfang',recollection:'ghostveil',heavensfall:'starfall'};
 export function drawMoveEffect(c,e,{reducedMotion=false}={}){
+  if(divineStyles[e.style])e={...e,style:divineStyles[e.style]};
   const t=1-e.life/e.maxLife,color=e.color,face=e.face??{x:1,y:0},a=Math.atan2(face.y,face.x),r=e.r??45;
   c.save();c.globalAlpha=Math.min(1,e.life*4);
   if(e.kind==='chain-bolt'){bolt(c,color,e.x,e.y-10,e.to.x,e.to.y-10,2);c.restore();return;}

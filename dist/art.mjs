@@ -1,10 +1,12 @@
-import {paintRegionGround} from './region-art.mjs?v=0.4.0';
-import {drawBoss,drawBossStrike,BOSS_DESIGNS} from './boss-art.mjs?v=0.4.1';
-import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.4.0';
-import {weaponSwing} from './moves.mjs?v=0.4.0';
-import {SWORDS} from './swords.mjs?v=0.4.0';
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.4.0';
-import {SWORD_SWING,clamp} from './core.mjs?v=0.4.0';
+import {drawBossCharge,drawBossVFX} from './boss-vfx.mjs?v=0.5.0';
+import {drawOathFighter,drawOathEffect} from './betrayal-art.mjs?v=0.5.0';
+import {paintRegionGround} from './region-art.mjs?v=0.5.0';
+import {drawBoss,drawBossStrike,BOSS_DESIGNS} from './boss-art.mjs?v=0.5.0';
+import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.5.0';
+import {weaponSwing} from './moves.mjs?v=0.5.0';
+import {SWORDS} from './swords.mjs?v=0.5.0';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.5.0';
+import {SWORD_SWING,clamp} from './core.mjs?v=0.5.0';
 const P={'.':null,o:'#252830',h:'#634337',H:'#8d6550',s:'#e9bc92',S:'#f3d1a0',e:'#202a2c',a:'#e8debe',A:'#c4b48f',c:'#517a78',C:'#6e9b91',b:'#493e3e',B:'#695246',l:'#b9c3c0',L:'#e0dfce',g:'#8b8e99',G:'#5b6072',r:'#997150',R:'#c7a46b',v:'#a799c9',V:'#716a97',y:'#f1c674',Y:'#e9e0af'};
 const sprites={
   pip:[
@@ -195,19 +197,22 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
   if(game.area.id==='hollow'){
     for(let i=0;i<8;i++){const x=61+i*12,y=247+((i*19)%124);block(ctx,'#80b0a5',x+Math.sin(game.time+i)*3,y,6,1);}
   }
-  for(const fx of game.effects)if(fx.kind==='divine-strike')divineZone(ctx,{...fx,kind:fx.shape},fx.color,true);
+  for(const fx of game.effects)if(fx.kind==='divine-strike'){divineZone(ctx,{...fx,kind:fx.shape},fx.color,true);const t=1-fx.life/fx.maxLife;for(let i=0;i<12;i++){const a=i*Math.PI/6,r=(fx.r??35)*(1+t*.5);pixelLine(ctx,fx.color,fx.x+Math.cos(a)*r*.5,fx.y+Math.sin(a)*r*.5,fx.x+Math.cos(a)*r,fx.y+Math.sin(a)*r,2);block(ctx,'#fff0d0',fx.x+Math.cos(a)*r,fx.y+Math.sin(a)*r-18*(1-t),2,4);}}
   const entities=[...game.area.objects.map(o=>({...o,sortY:['house','counter','shelf'].includes(o.kind)?o.y+o.h:o.y,draw:()=>drawObject(ctx,o,game.time)})),...game.area.chests.map(o=>({...o,sortY:o.y,draw:()=>drawChest(ctx,o,game.time)})),...game.area.npcs.map(n=>({...n,sortY:n.y,draw:()=>{
+    if(n.kind==='invisible')return;
     shadow(ctx,n.x,n.y,n.kind==='dragon'?48:20,5);sprite(ctx,n.kind,n.x,n.y,{scale:n.kind==='dragon'?1.6:1});
     if(n.id==='uncle'&&!game.defeated.has('warden')){block(ctx,'#69717e',n.x-14,n.y-25,28,2);for(let i=0;i<5;i++)block(ctx,'#848b91',n.x-12+i*6,n.y-25,2,28);}
     if(n.id==='uncle'&&game.defeated.has('warden')){block(ctx,'#f7d78d',n.x-1,n.y-31+Math.sin(game.time*3),2,6);block(ctx,'#f7d78d',n.x-1,n.y-23+Math.sin(game.time*3),2,2);}
     if(n.id==='ally'&&n.swingTime){const face=n.attackFacing,angle=Math.atan2(face.y,face.x);blade(ctx,n.x+face.x*4,n.y-8+face.y*4,angle-1+(1-n.swingTime/.25)*1.8,{length:22});}
   }})),...game.area.enemies.map(e=>({...e,sortY:e.y,draw:()=>{
     if(e.dormant)return;
+    drawBossCharge(ctx,e,game.time,{reducedMotion});
+    if(e.dead&&e.id==='rowan-betrayer'){drawOathFighter(ctx,e,game.time,{reducedMotion});return;}
     if(e.dead){block(ctx,'#66746b',e.x-5,e.y-3,9,4);block(ctx,'#9a9d85',e.x-3,e.y-3,3,2);return;}
-    if(e.divineCast)for(const z of e.divineCast.zones)divineZone(ctx,z,game.area.id==='skythreshold'?'#83384b':'#ffdaa0');
+    if(e.divineCast)for(const z of e.divineCast.zones){const color=game.area.id==='skythreshold'?'#83384b':'#ffdaa0';divineZone(ctx,z,color);ctx.save();ctx.globalAlpha=.14;divineZone(ctx,z,color,true);ctx.restore();const t=1-e.divineCast.time/1.05;for(let i=0;i<8;i++){const a=i*Math.PI/4;block(ctx,color,z.x+Math.cos(a)*(12+18*(1-t)),z.y+Math.sin(a)*(12+18*(1-t)),2,2);}}
     const dragon=e.id==='lake-storm';
     if(dragon&&e.stormCast){ctx.strokeStyle='#e99b78';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.stormCast.x,e.stormCast.y,26,0,Math.PI*2);ctx.stroke();block(ctx,'#e99b78',e.stormCast.x-1,e.stormCast.y-8,2,16);block(ctx,'#e99b78',e.stormCast.x-8,e.stormCast.y-1,16,2);}
-    if(!drawBoss(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x})){shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='rowan-betrayer'?'knight':e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});}
+    if(!drawOathFighter(ctx,e,game.time,{reducedMotion})&&!drawBoss(ctx,e,game.time,{reducedMotion,flip:game.player.x<e.x})){shadow(ctx,e.x,e.y,e.kind==='boss'?33:22,6);sprite(ctx,e.id==='rowan-betrayer'?'knight':e.id==='collector'?'collector':e.kind,e.x,e.y,{scale:e.kind==='boss'?1.5:1,flash:!!e.flash,flip:game.player.x<e.x});}
     if(e.freeze||e.root||e.burn){const color=e.freeze?'#b4edf1':e.root?'#b8cf86':'#f6a157';block(ctx,color,e.x-10,e.y+2,20,2);for(let i=0;i<3;i++)block(ctx,color,e.x-9+i*8,e.y-(e.freeze?17:5),2,e.freeze?18:8);}
     if(e.windup||e.swingTime){
       const face=e.attackFacing,angle=Math.atan2(face.y,face.x),radius=e.kind==='boss'?38:28;
@@ -259,6 +264,8 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     if(!scene.hit){if(!Object.hasOwn(SWORDS,scene.skin)&&scene.skin!=='scrap-king')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color:scene.color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});}
   }
   for(const e of game.effects){
+    if(drawOathEffect(ctx,e,{reducedMotion}))continue;
+    if(drawBossVFX(ctx,e,{reducedMotion}))continue;
     const progress=1-e.life/e.maxLife;
     if(['weapon-move','chain-bolt','strike-warning'].includes(e.kind)){drawMoveEffect(ctx,e,{reducedMotion});}
     else if(e.kind==='ultimate-theme'){

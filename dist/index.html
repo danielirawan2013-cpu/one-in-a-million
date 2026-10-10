@@ -6,8 +6,8 @@
   <meta name="description" content="A tiny human. A million-to-one gift. Explore a pixel dungeon, find unpredictable loot, and unlock your strength to save your monster family.">
   <title>One in a Million — Pip's adventure</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=0.4.0">
-  <script type="module" src="game.mjs?v=0.4.1"></script>
+  <link rel="stylesheet" href="style.css?v=0.5.0">
+  <script type="module" src="game.mjs?v=0.5.0"></script>
 </head>
 <body>
 <svg class="symbol-bank" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -30,7 +30,7 @@
     <section class="play-area" aria-label="Dungeon adventure">
       <div class="location-bar"><div><span class="location-dot"></span><strong id="location">Bramble Hollow</strong><span id="location-note">Home, sweet slightly haunted home.</span></div><span id="chapter-label">Chapter one</span></div>
       <div class="viewport" id="viewport">
-        <canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E for inventory, G to interact, R for power, F to parry, Z for admin, V for your ultimate, U to charge, Shift to dodge, H to heal."></canvas>
+        <div id="duel-status" class="duel-status" hidden><span id="duel-title"></span><progress id="duel-health" value="250" max="250"></progress></div><canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E for inventory, G to interact, R for power, F to parry, Z for admin, V for your ultimate, U to charge, Shift to dodge, H to heal."></canvas>
         <div class="hud" aria-label="Player status"><div class="health"><svg><use href="#i-heart"/></svg><div class="health-track"><div id="health-fill"></div></div><span id="health-text">100 / 100</span></div><div class="money"><svg><use href="#i-coin"/></svg><span id="coins">0</span></div></div>
         <div id="interact-hint" class="interaction" hidden><kbd>G</kbd><span></span></div>
         <div id="toast" class="loot-toast" role="status" hidden></div>
@@ -49,7 +49,7 @@
       <section class="field-note"><h2>A note to self</h2><p id="field-note">“If I don’t come back, someone please water Grandma’s gold.”</p></section>
     </aside>
   </main>
-  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Eleven playable chapters · v0.4.1</span></footer>
+  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Eleven chapters + betrayal epilogue · v0.5.0</span></footer>
 </div>
 <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
 

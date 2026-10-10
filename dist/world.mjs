@@ -1,8 +1,9 @@
-import {REGION_STYLES} from './region-art.mjs?v=0.4.0';
-import {GOD_IDS,godArea} from './gods.mjs?v=0.4.0';
-import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.4.0';
+import {REGION_STYLES} from './region-art.mjs?v=0.5.0';
+import {GOD_IDS,godArea} from './gods.mjs?v=0.5.0';
+import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.5.0';
 export const TILE=16, COLS=44, ROWS=30, WIDTH=COLS*TILE, HEIGHT=ROWS*TILE;
 export const AREAS={
+  oathhall:{name:'The Broken Oath Hall',note:'The door Rowan locked herself.',caption:'Watch the marked attacks. Dodge sideways; face the attacker to parry.',palette:['#393b45','#444651','#50525e','#827c73'],ground:'stone',spawn:{x:352,y:390},exits:[],chests:[],npcs:[],enemies:[{id:'rowan-betrayer',name:'Rowan · The Broken Oath',kind:'boss',x:352,y:205,hp:250,damage:15,xp:50,coins:75}]},
   hollow:{name:'Bramble Hollow',note:'Home, sweet slightly haunted home.',caption:'Find the practice armour. Even small swings count.',palette:['#29463c','#345344','#3f614b','#6c7650'],ground:'grass',spawn:{x:352,y:340},
     exits:[{id:'shop-door',x:247,y:271,to:'shop',spawn:{x:352,y:398},label:'Enter the family shop'},{id:'north',x:352,y:64,to:'moss',spawn:{x:352,y:417},label:'Enter the mossway'},{id:'east',x:466,y:387,to:'thorn',spawn:{x:352,y:415},requires:'returned',label:'Take the old dungeon road'}],
     chests:[{id:'hollow-wood',type:'wood',x:255,y:341},{id:'hollow-iron',type:'iron',x:455,y:218}],

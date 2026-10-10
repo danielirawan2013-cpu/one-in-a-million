@@ -1,13 +1,14 @@
-import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.4.0';
-import {GOD_EPISODES} from './gods.mjs?v=0.4.0';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.4.0';
-import {EPISODES} from './campaign.mjs?v=0.4.0';
-import {SWORDS} from './swords.mjs?v=0.4.0';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.4.0';
-import {Adventure} from './engine.mjs?v=0.4.0';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.4.0';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.4.0';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.4.1';
+import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.5.0';
+import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.5.0';
+import {GOD_EPISODES} from './gods.mjs?v=0.5.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.0';
+import {EPISODES} from './campaign.mjs?v=0.5.0';
+import {SWORDS} from './swords.mjs?v=0.5.0';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.5.0';
+import {Adventure} from './engine.mjs?v=0.5.0';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.5.0';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.5.0';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.5.0';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -50,8 +51,10 @@ function updateUI(){
   const p=game.player,stage=game.stage;
   $('health-fill').style.width=p.hp+'%';$('health-text').textContent=p.hp+' / 100';$('coins').textContent=p.coins;
   $('location').textContent=game.area.name;$('location-note').textContent=game.area.note;
-  $('chapter-label').textContent='Chapter '+['','one','two','three','four','five','six','seven','eight','nine','ten','eleven'][game.chapter];
-  $('scene-caption').textContent=game.area.id==='shop'?game.area.caption:game.storyDone&&game.area.id==='hollow'?'The whole family is home. Even the knight.':game.returned&&game.area.id==='hollow'?'Rowan is back at the shop. Hear what she’s planning.':game.stage&&game.area.id==='hollow'?'Your spark is awake. Head north into the mossway.':game.area.caption;
+  $('chapter-label').textContent=game.area.id==='oathhall'?'Epilogue':'Chapter '+['','one','two','three','four','five','six','seven','eight','nine','ten','eleven'][game.chapter];
+  $('scene-caption').textContent=game.area.id==='shop'?game.area.caption:game.betrayalStage===6&&game.area.id==='hollow'?'Your family is home. Rowan is helping the prisoners.':game.campaignDone&&game.betrayalStage<6&&game.area.id==='hollow'?'Rowan has a letter for you. Talk to her near the shop.':game.storyDone&&game.area.id==='hollow'?'The whole family is home. Even the knight.':game.returned&&game.area.id==='hollow'?'Rowan is back at the shop. Hear what she’s planning.':game.stage&&game.area.id==='hollow'?'Your spark is awake. Head north into the mossway.':game.area.caption;
+  const rowan=game.area.id==='oathhall'?game.area.enemies.find(e=>e.id==='rowan-betrayer'):null,duel=$('duel-status');duel.hidden=!rowan||game.betrayalStage<2;
+  if(rowan){$('duel-title').textContent=game.betrayalStage>=5?'The door is open':rowan.dead?'Defeat the remaining remnant':`Rowan · ${rowan.phase} / 3 · ${ROWAN_PHASES[rowan.phase-1].name}`;$('duel-health').value=rowan.hp;$('duel-health').max=rowan.maxHp;$('duel-health').hidden=rowan.dead;$('duel-health').setAttribute('aria-label','Rowan health, phase '+rowan.phase);}
   $('weapon-name').textContent=p.scrapKing?'Scrap King · Admin':SWORDS[p.weaponSkin]?.name??(p.weapon>=12?'Dawnblade':p.weapon>=8?'Iron shortsword':'Battered sword');$('weapon-damage').textContent=game.attackDamage+' DMG';itemIcon($('weapon-icon'),p.scrapKing?'scrap-king':p.weaponSkin??(p.weapon>=12?'blade':'weapon'));
   $('potion-label').textContent=p.potions+' potion'+(p.potions===1?'':'s');
   $('heal-action').disabled=game.mode!=='playing';
@@ -77,6 +80,7 @@ function updateUI(){
   },quest=quests[game.chapter]??{};
   if(game.campaignStep){const ep=EPISODES[game.campaignStep-1],done=game.campaignDone;quest.title=ep.chapter;quest.description=done?'The dungeon heart is safe. Everyone has a home to return to.':ep.arrival[0];quest.steps=[['Follow the trail to '+ep.name,done||game.area.id===ep.id],['Clear the constructs',done||[0,1,2,3].every(i=>game.defeated.has(ep.id+'-guard-'+i))],['Defeat '+ep.boss,done||game.defeated.has(ep.id+'-boss')],['Hear the next part of the story',done||game.defeated.has(ep.id+'-read')]];}
   if(game.area.divineStep){const ep=GOD_EPISODES[game.area.divineStep-1];quest.title=ep.chapter;quest.description=ep.arrival[0];quest.steps=[['Enter '+ep.name,true],['Defeat the celestial sentinel',game.defeated.has(ep.id+'-sentinel')],['Defeat '+ep.boss,game.defeated.has(ep.id+'-god')],['Recover your lost memory',game.defeated.has(ep.id+'-read')]];}
+  if(game.area.id==='oathhall'||game.area.id==='hollow'&&game.campaignDone){quest.title='The Broken Oath';quest.description=game.betrayalStage===6?'Rowan chose to betray you to save her family. You stopped the remnant. Trust will take longer to rebuild.':game.betrayalStage===0?'Three weeks later, Rowan has a letter for Pip. Talk to her beside the shop.':game.betrayalStage===1?'Rowan locked the hall herself. Read her confession before drawing your sword.':game.betrayalStage===5?'The fight is over. Approach Rowan and press G to hear the aftermath.':ROWAN_PHASES[Math.min(2,game.betrayalStage-2)].hint;quest.steps=[['Read Rowan’s letter',game.betrayalStage>=1],['Survive the three-stage duel',game.defeated.has('rowan-betrayer')],['Defeat the royal remnant',game.betrayalStage>=5],['Hear the aftermath and return home',game.betrayalStage===6]];}
   $('quest-title').textContent=quest.title;$('quest-description').textContent=quest.description;
   ['step-training','step-guards','step-boss','step-home'].forEach((id,i)=>{$(id).classList.toggle('complete',quest.steps[i][1]);$(id).querySelector('.step-text').textContent=quest.steps[i][0];});
   $('inventory-toggle').disabled=!adventureStarted||!['playing','paused','inventory'].includes(game.mode);
@@ -90,19 +94,19 @@ function updateUI(){
   $('admin').disabled=game.mode==='special'||game.mode==='inventory';$('help').disabled=game.mode==='admin'||game.mode==='special'||game.mode==='inventory';
   $('pause').disabled=game.mode==='special'||game.mode==='admin'||game.mode==='inventory'||game.mode==='title'||game.mode==='complete'||game.mode==='dead'||game.mode==='dialog';
   $('pause').setAttribute('aria-label',game.mode==='paused'?'Resume game':'Pause game');
-  $('field-note').textContent=game.area.divineStep?GOD_EPISODES[game.area.divineStep-1].note:game.campaignStep?EPISODES[game.campaignStep-1].note:game.storyDone?'“We made room for one more. The knight asked for a smaller apron.”':game.familyProof?'“Grandma is a dragon, not a villain. Also, she forgot my birthday again.”':game.returned?'“My best customer is hunting my family. How do I tell her?”':game.defeated.has('warden')?'“I stopped a sword bigger than me. I am going to need a bigger breakfast.”':stage>0?'“That door felt lighter today. Maybe I’m stronger than I thought.”':'“If I don’t come back, someone please water Grandma’s gold.”';
+  $('field-note').textContent=game.area.id==='oathhall'?'“She knew I would come because I trusted her.”':game.betrayalStage===6&&game.area.id==='hollow'?'“We saved her family. Forgiving her will take longer.”':game.area.divineStep?GOD_EPISODES[game.area.divineStep-1].note:game.campaignStep?EPISODES[game.campaignStep-1].note:game.storyDone?'“We made room for one more. The knight asked for a smaller apron.”':game.familyProof?'“Grandma is a dragon, not a villain. Also, she forgot my birthday again.”':game.returned?'“My best customer is hunting my family. How do I tell her?”':game.defeated.has('warden')?'“I stopped a sword bigger than me. I am going to need a bigger breakfast.”':stage>0?'“That door felt lighter today. Maybe I’m stronger than I thought.”':'“If I don’t come back, someone please water Grandma’s gold.”';
   const h=game.mode==='playing'?game.hint:null,hint=$('interact-hint');hint.hidden=!h;
   if(h)hint.querySelector('span').textContent=h.type?'Open '+({wood:'wooden',iron:'iron',gold:'golden'}[h.type])+' chest':h.label;
 }
 function updateInventory(){
   $('bag-count').textContent=game.inventory.length+' find'+(game.inventory.length===1?'':'s');
   const grouped=new Map();for(const item of game.inventory){const key=item.id+item.rarity;const existing=grouped.get(key);if(existing)existing.count++;else grouped.set(key,{...item,count:1});}
-  const el=$('inventory');el.innerHTML=grouped.size?[...grouped.values()].map(i=>`<div class="loot-row ${i.rarity}"><canvas width="24" height="24" data-item="${escapeHTML(i.id)}" aria-hidden="true"></canvas><div><strong>${escapeHTML(i.name)}</strong><small>${i.skin?(i.skin==='thunderhammer'?'Secret boss reward · ':'Very rare sword · ')+SWORDS[i.skin].damage+' base damage':i.rarity==='trash'?'Junk · sell for '+i.value+' coins':i.rarity==='rare'?'Rare · equipped':i.id==='coins'?'Useful · coins collected':i.id==='potion'?'Useful · potion collected':'Useful · gear collected'}</small></div>${i.skin?'<button data-equip="'+escapeHTML(i.skin)+'" '+(game.player.weaponSkin===i.skin&&!game.player.scrapKing?'disabled':'')+'>'+ (game.player.weaponSkin===i.skin&&!game.player.scrapKing?'Equipped':'Equip')+'</button>':''}${i.count>1?'<span>×'+i.count+'</span>':''}</div>`).join(''):'<p class="empty-bag">A little room for a little luck.<br>Find a chest to fill your satchel.</p>';
+  const el=$('inventory');el.innerHTML=grouped.size?[...grouped.values()].map(i=>`<div class="loot-row ${i.rarity}"><canvas width="24" height="24" data-item="${escapeHTML(i.id)}" aria-hidden="true"></canvas><div><strong>${escapeHTML(i.name)}</strong><small>${i.skin?(SWORDS[i.skin].god?SWORDS[i.skin].god+'’s guaranteed reward · ':i.skin==='thunderhammer'?'Secret boss reward · ':'Very rare sword · ')+SWORDS[i.skin].damage+' base damage':i.rarity==='trash'?'Junk · sell for '+i.value+' coins':i.rarity==='rare'?'Rare · equipped':i.id==='coins'?'Useful · coins collected':i.id==='potion'?'Useful · potion collected':'Useful · gear collected'}</small></div>${i.skin?'<button data-equip="'+escapeHTML(i.skin)+'" '+(game.player.weaponSkin===i.skin&&!game.player.scrapKing?'disabled':'')+'>'+ (game.player.weaponSkin===i.skin&&!game.player.scrapKing?'Equipped':'Equip')+'</button>':''}${i.count>1?'<span>×'+i.count+'</span>':''}</div>`).join(''):'<p class="empty-bag">A little room for a little luck.<br>Find a chest to fill your satchel.</p>';
   el.querySelectorAll('canvas').forEach(c=>itemIcon(c,c.dataset.item));
 }
 function shopPanel(){
   const count=game.inventory.filter(i=>i.rarity==='trash').length;
-  const line=game.storyDone?'“A human, a knight, a skeleton and a dragon. We are going to need more mugs.”':game.familyProof?'“Go get Grandma. And tell her those birthday presents don’t wrap themselves.”':game.returned?'“Bones is home. Now get to Grandma before your favourite customer does.”':'“Bring Bones back in one piece, will you? Well… his usual number of pieces.”';
+  const line=game.betrayalStage===6?'“Her family needed help. So we helped. You don’t owe Rowan a smile, Pip.”':game.storyDone?'“A human, a knight, a skeleton and a dragon. We are going to need more mugs.”':game.familyProof?'“Go get Grandma. And tell her those birthday presents don’t wrap themselves.”':game.returned?'“Bones is home. Now get to Grandma before your favourite customer does.”':'“Bring Bones back in one piece, will you? Well… his usual number of pieces.”';
   showPanel(`<div class="story-panel dialog-panel"><div class="dialog-speaker">Silk · Your adopted sister</div><h2>Welcome home, short stuff.</h2><p>${line}</p><p>Junk in your bag: <strong>${count} items</strong><br>Coins: <strong>${game.player.coins}</strong> · Potions: <strong>${game.player.potions}</strong></p><div class="buttons"><button data-action="sell" ${count?'':'disabled'}>Sell junk</button><button data-action="buy" class="secondary" ${game.player.coins>=8?'':'disabled'}>Potion · 8 coins</button></div><button data-action="mystery-chest" class="secondary" ${game.player.coins<50||game.inventory.length>=200?'disabled':''}>Mystery chest · 50 coins</button><button data-action="close" class="secondary">Back to the shop</button></div>`);
 }
 function chapterPanel(){
@@ -123,12 +127,27 @@ function divinePanel(episode,arrival=false){
   showPanel('<div class="story-panel dialog-panel story-reader"><h2>'+escapeHTML(arrival?episode.chapter:'A recovered memory')+'</h2>'+ (arrival?episode.arrival:episode.ending).map(p=>'<p>'+escapeHTML(p)+'</p>').join('')+'<div class="buttons"><button data-action="'+(arrival?'close':'advance-divine')+'">'+(arrival?'Enter '+episode.name:game.divineStep===6?'Return to your family':'Climb to the next realm')+'</button>'+(arrival?'':'<button data-action="close" class="secondary">Explore first</button>')+'</div></div>');
 }
 function divineEnding(){showPanel('<div class="story-panel story-reader"><h2>A door, not a throne.</h2><p>You defeated the six gods, recovered your memories, and broke the oath that banished you.</p><p>Pip is a demigod. He is still the tiny shopkeeper his family raised. Heaven can keep its crown. He has a home to protect.</p><p><strong>Divine story arc complete.</strong><br>Your weapons, family story, and expedition progress are preserved.</p><button data-action="close">Back to the family shop</button></div>');}
+let betrayalPage=0,betrayalKind='arrival';
+function betrayalPanel(kind='arrival',page=0){
+  betrayalKind=kind;betrayalPage=page;game.mode='dialog';const paragraphs=BETRAYAL[kind],last=page===paragraphs.length-1;
+  showPanel(`<div class="story-panel dialog-panel betrayal-reader"><h2>${kind==='arrival'?BETRAYAL.title:'The price of a promise'}</h2><p>${escapeHTML(paragraphs[page])}</p><div class="buttons"><button data-action="${last?(kind==='arrival'?'fight-rowan':'finish-betrayal'):'betrayal-next'}">${last?(kind==='arrival'?'Refuse the bargain · Fight':'Return home'):'Continue'}</button>${page?'<button class="secondary" data-action="betrayal-back">Previous</button>':''}</div><p class="footnote">${kind==='arrival'?'Rowan’s choice':'After the fight'} · ${page+1} / ${paragraphs.length}</p></div>`);
+}
+function betrayalEnding(){showPanel('<div class="story-panel story-reader"><h2>An empty place at the table.</h2><p>Rowan’s family is safe. The royal remnant’s prisoners are free.</p><p>Pip stopped the bargain without becoming its weapon. Rowan stays behind to help the prisoners and tell the truth. Trust will take longer to rebuild.</p><p><strong>The Broken Oath complete.</strong><br>Your swords, loot, and divine journey are preserved.</p><button data-action="explore">Back to the family shop</button></div>');}
 function campaignEnding(){
-  showPanel(`<div class="story-panel story-reader"><h2>A home worth saving.</h2><p>The false bounty is exposed, the dungeon heart is safe, and your family is home.</p><p>Rowan’s mum is recovering. Bones has his chair. Silk has a second till. Grandma has more presents than customers.</p><p>Pip is still small, still kind, and still wearing that oversized apron.</p><p><strong>Eight chapters complete.</strong><br>${game.opened.size} chests opened · ${game.inventory.filter(i=>i.skin).length} sword finds</p><div class="buttons"><button data-action="replay-campaign">Replay the expedition</button><button data-action="explore" class="secondary">Explore with your family</button></div><p class="footnote">Your swords and loot carry into the next expedition.</p></div>`);
+  if(game.betrayalStage===6){betrayalEnding();return;}
+
+  showPanel(`<div class="story-panel story-reader"><h2>A home worth saving.</h2><p>The false bounty is exposed, the dungeon heart is safe, and your family is home.</p><p>Rowan’s mum is recovering. Bones has his chair. Silk has a second till. Grandma has more presents than customers.</p><p>Pip is still small, still kind, and still wearing that oversized apron.</p><p><strong>Eight chapters complete.</strong><br>${game.opened.size} chests opened · ${game.inventory.filter(i=>i.skin).length} sword finds</p><div class="buttons"><button data-action="begin-betrayal">${game.betrayalStage?"Return to the oath hall":"Read Rowan’s letter"}</button><button data-action="replay-campaign" class="secondary">Replay the expedition</button><button data-action="explore" class="secondary">Explore with your family</button></div><p class="footnote">Your swords and loot carry into the next expedition.</p></div>`);
 }
 function event(e){
   if(['swing','power','loot','unlock','hurt','complete','dodge','healed','parried'].includes(e.type))audioCue(e.type);
   switch(e.type){
+    case 'betrayal-arrival':betrayalPanel();save();break;
+    case 'betrayal-started':closePanel();toast('Three stages. Face Rowan to parry; dodge sideways out of the marked rush.',{title:'The Broken Oath'});save();break;
+    case 'rowan-phase':toast(ROWAN_PHASES[e.phase-1].line+' '+ROWAN_PHASES[e.phase-1].hint,{title:'Stage '+e.phase+' · '+ROWAN_PHASES[e.phase-1].name});save();break;
+    case 'betrayal-resumed':closePanel();toast('Your current duel stage is saved.');save();break;
+    case 'betrayal-cleared':toast('Approach Rowan and press G to hear the aftermath.',{title:'The fight is over'});save();break;
+    case 'betrayal-aftermath':betrayalPanel('aftermath');save();break;
+    case 'betrayal-complete':betrayalEnding();save();break;
     case 'started':adventureStarted=true;break;
     case 'portal-open':toast('The thunder falls silent. A doorway is rising from the lake. Walk onto the new stone path and press G.',{title:'Something remembers you'});save();break;
     case 'divine-arrival':divinePanel(e.episode,true);game.defeated.add(game.area.id+'-visited');save();break;
@@ -142,6 +161,7 @@ function event(e){
     case 'special-impact':audioCue('unlock');break;
     case 'special-end':closePanel();save();break;
     case 'parried':toast('Perfect parry! Strike now for a stronger counterattack.');break;
+    case 'god-sword-earned':updateInventory();save();toast(e.loot.name+' · Added to your inventory. Equip it to use its divine moves.',{title:e.god+'’s sword',rarity:'rare'});break;
     case 'hammer-earned':updateInventory();save();toast('Thunderwake hammer obtained! T summons lightning. A portal has opened on the lake’s new stone path—press G to enter.',{title:'The Lake Tempest defeated',rarity:'rare'});break;
     case 'storm-summoned':toast('The Lake Tempest awakens. Dodge the marked lightning strikes!',{title:'Secret boss summoned'});save();break;
     case 'ability':audioCue('power');break;
@@ -167,9 +187,9 @@ function event(e){
     case 'grandma-locked':showPanel('<div class="story-panel dialog-panel"><div class="dialog-speaker">Grandma</div><h2>Hands off the presents.</h2><p>“That rude man wants my treasure. It’s mostly socks, Pip. Expensive socks.”</p><p>Stop the royal collector before he takes Grandma’s home.</p><button data-action="close">I’ll protect you.</button></div>');break;
     case 'grandma-rescued':showPanel('<div class="story-panel dialog-panel"><div class="dialog-speaker">Grandma</div><h2>My little one.</h2><p>“You always thought you were the weak one. But you came back for every one of us.”</p><p>“That knight can come home too. We’ll find her a mug.”</p><div class="buttons"><button data-action="finish-story">Bring everyone home</button><button data-action="close" class="secondary">Loot the chest first</button></div></div>');break;
     case 'family-home':showPanel(`<div class="story-panel dialog-panel"><h2>${e.who==='bones-home'?'Uncle Bones':'Grandma'}</h2><p>${e.who==='bones-home'?'“I’ve been rescued once. That’s enough exercise for this century.”':'“Your birthday present has been in my treasure pile for twelve years. Better late than never.”'}</p><button data-action="close">Back to adventure</button></div>`);break;
-    case 'death':showPanel('<div class="story-panel"><h2>A stumble.<br>Not the end.</h2><p>Silk found you and dragged you home.<br>“You owe me a new apron, short stuff.”</p><p>Your loot and unlocked strength are safe.</p><button data-action="recover">Try again · Full health</button></div>');break;
+    case 'death':if(game.area.id==='oathhall'){showPanel('<div class="story-panel"><h2>Get back on your feet.</h2><p>You retreat behind a fallen shield while the remnant regroups.</p><p>Your current duel stage, defeated soldiers, swords, and loot are saved.</p><button data-action="recover">Retry this stage · Full health</button></div>');break;}showPanel('<div class="story-panel"><h2>A stumble.<br>Not the end.</h2><p>Silk found you and dragged you home.<br>“You owe me a new apron, short stuff.”</p><p>Your loot and unlocked strength are safe.</p><button data-action="recover">Try again · Full health</button></div>');break;
     case 'complete':completePanel();save();break;
-    case 'restored':adventureStarted=true;if(game.area.divineStep){if(!game.defeated.has(game.area.id+'-read')){game.mode='dialog';divinePanel(GOD_EPISODES[game.area.divineStep-1],true);}else closePanel();}else if(game.campaignDone)campaignEnding();else if(game.storyDone&&!game.campaignStep)completePanel();else if(game.returned&&!game.chapter2Started)chapterPanel();else closePanel();updateInventory();break;
+    case 'restored':adventureStarted=true;if(game.area.id==='oathhall'){if(game.betrayalStage===1)betrayalPanel();else if(game.betrayalStage===5)betrayalPanel('aftermath');else closePanel();}else if(game.area.divineStep){if(!game.defeated.has(game.area.id+'-read')){game.mode='dialog';divinePanel(GOD_EPISODES[game.area.divineStep-1],true);}else closePanel();}else if(game.campaignDone)campaignEnding();else if(game.storyDone&&!game.campaignStep)completePanel();else if(game.returned&&!game.chapter2Started)chapterPanel();else closePanel();updateInventory();break;
     case 'healed':toast('Restored 40 health.');save();break;
   }
   if(game)updateUI();
@@ -243,6 +263,11 @@ overlay.addEventListener('click',e=>{
     case 'advance-divine':game.advanceDivine();break;
     case 'begin-campaign':game.beginCampaign();break;
     case 'advance-campaign':game.advanceCampaign();break;
+    case 'begin-betrayal':game.beginBetrayal();break;
+    case 'betrayal-next':betrayalPanel(betrayalKind,Math.min(BETRAYAL[betrayalKind].length-1,betrayalPage+1));break;
+    case 'betrayal-back':betrayalPanel(betrayalKind,Math.max(0,betrayalPage-1));break;
+    case 'fight-rowan':game.startBetrayalDuel();break;
+    case 'finish-betrayal':game.finishBetrayal();break;
     case 'replay-campaign':game.replayCampaign();break;
     case 'mystery-chest':if(game.buyMysteryChest()){shopPanel();updateInventory();save();}break;
     case 'inventory-close':closeInventory();break;
@@ -277,7 +302,7 @@ document.addEventListener('keydown',e=>{
   if(e.code==='KeyE'&&!e.repeat&&!e.target.closest('input,select,textarea')){e.preventDefault();if(game.mode==='inventory')closeInventory();else openInventory();return;}
   if(e.code==='KeyZ'&&!e.repeat&&!e.target.closest('input,select,textarea')){e.preventDefault();if(game.mode==='admin')closeAdmin();else openAdmin();return;}
   if(e.code==='Tab'&&overlay.children.length){const buttons=[...overlay.querySelectorAll('input:not(:disabled),select:not(:disabled),button:not(:disabled)')];const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}return;}
-  if(e.code==='Escape'){e.preventDefault();if(game.mode==='inventory'){closeInventory();}else if(game.mode==='admin'){closeAdmin();}else if(game.mode==='help')overlay.querySelector('[data-action="help-close"]').click();else if(game.mode==='dialog'){game.mode='playing';closePanel();updateUI();}else pause();return;}
+  if(e.code==='Escape'){e.preventDefault();if(game.mode==='inventory'){closeInventory();}else if(game.mode==='admin'){closeAdmin();}else if(game.mode==='help')overlay.querySelector('[data-action="help-close"]').click();else if(game.mode==='dialog'&&game.area.id==='oathhall'&&game.betrayalStage===1){betrayalPanel('arrival',betrayalPage);}else if(game.mode==='dialog'){game.mode='playing';closePanel();updateUI();}else pause();return;}
   if(game.mode!=='playing'||e.target.closest('input,select,textarea'))return;
   if(e.code==='Space'&&e.target.closest('button'))return;
   if(movement[e.code]){e.preventDefault();input[movement[e.code]]=true;}

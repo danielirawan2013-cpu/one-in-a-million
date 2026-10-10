@@ -101,3 +101,11 @@ Bosses now have distinct silhouettes: an ice dragon, oath judge, solar deity, mo
 ## Creature artwork (v0.4.1)
 
 Nineteen creature bosses have individually authored pixel bodies, shading, and attack poses. Rimewyrm is a coiled ice wyrm; the Lake Tempest is a broad-winged thunder wyvern. The divine rulers are a two-headed oath basilisk, solar phoenix, lunar jellyfish, memory cuttlefish, and six-winged griffin. Dungeon guardians range from an archive owl and salvage scorpion to a brass minotaur and command nautilus. Creature melee attacks use their claws, jaws, or elemental power. Existing saves and combat balance are preserved.
+
+## The Broken Oath and divine swords (v0.5.0)
+
+After completing the eight-chapter main story, choose **Read Rowan’s letter** on the ending screen, or talk to Rowan beside the family shop. She has accepted the royal remnant’s bargain to deliver Pip in exchange for her mother and brother. This is her own choice. The oath hall has a three-stage duel, shield lancers with telegraphed spear thrusts, and masked arbalists with locked crossbow aim. Each stage is a checkpoint; retries preserve defeated soldiers and your equipment. Defeat Rowan and every remnant soldier, then approach Rowan and press **G** for the aftermath. Pip helps her family without immediately forgiving her.
+
+Each god guarantees a separate sword: Rimewyrm drops **Rimecrown**, Oras **Oathbreaker**, Aurel **Solstice**, Nym **Tidemirror**, Mnemos **Recollection**, and Veyr **Heavensfall**. These have their own pixel artwork, fighting styles, abilities and charged ultimates. They are added to your satchel on victory; a full satchel leaves a persistent sword chest to collect after making room. Divine swords are exclusive boss rewards, separate from random chest swords. Older saves continue to work; swords for previously defeated gods are delivered when you return home.
+
+Boss impacts now throw sparks, Rowan’s attacks draw readable arcs and lanes, and divine attacks use frost crystals, broken chains, phoenix fire, crescents, memory pages and crown fragments. Reduced motion keeps warnings and removes extra travel and camera shake.

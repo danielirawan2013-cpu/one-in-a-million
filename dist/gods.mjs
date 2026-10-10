@@ -48,7 +48,7 @@ export function tickDivine(g,e,dt){
  if(e.divineCast){
   e.divineCast.time-=dt;if(e.divineCast.time>0)return;
   const zones=e.divineCast.zones;e.divineCast=null;e.divineCd=3.1;e.castIndex=(e.castIndex??0)+1;
-  for(const z of zones){g.effects.push({...z,shape:z.kind,kind:'divine-strike',color:e.color,life:.5,maxLife:.5});g.burst(z.x,z.y,e.color,12);}
+  for(const z of zones){g.effects.push({...z,shape:z.kind,kind:'divine-strike',pattern:e.pattern,color:e.color,life:.5,maxLife:.5});g.burst(z.x,z.y,e.color,12);}
   const p=g.player;if(!p.invulnerable&&zones.some(z=>inDivineZone(p,z))){p.hp=Math.max(0,p.hp-(p.guardTime?10:20));p.invulnerable=.65;p.hurtFlash=.15;g.shake=2;g.emit('hurt');if(!p.hp){g.mode='dead';g.emit('death');}}
  }else if(!e.divineCd){e.divineCast={time:1.05,zones:divineZones(e,g.player)};e.memories=[...(e.memories??[]).slice(-1),{x:g.player.x,y:g.player.y}];}
 }

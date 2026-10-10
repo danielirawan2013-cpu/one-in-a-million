@@ -1,5 +1,5 @@
 // Each region has a different landscape and route, not a palette-swapped carpet.
-export const REGION_STYLES={moss:'overgrown-road',crypt:'buried-prison',thorn:'thornwood',tower:'library',ember:'treasure-cave',workyard:'salvage-yard',foundry:'lava-foundry',rootgrove:'root-cathedral',weaverhall:'silk-canopy',stormshore:'beach',beacon:'lighthouse',starpass:'meteor-craters',starvault:'observatory',heartgate:'brass-lock',heartcore:'living-heart',skythreshold:'frozen-island',oathtribunal:'tribunal',sunforge:'solar-island',mooncourt:'moon-pools',exilearchive:'floating-library',crownsummit:'cloud-palace'};
+export const REGION_STYLES={oathhall:'broken-oath-prison',moss:'overgrown-road',crypt:'buried-prison',thorn:'thornwood',tower:'library',ember:'treasure-cave',workyard:'salvage-yard',foundry:'lava-foundry',rootgrove:'root-cathedral',weaverhall:'silk-canopy',stormshore:'beach',beacon:'lighthouse',starpass:'meteor-craters',starvault:'observatory',heartgate:'brass-lock',heartcore:'living-heart',skythreshold:'frozen-island',oathtribunal:'tribunal',sunforge:'solar-island',mooncourt:'moon-pools',exilearchive:'floating-library',crownsummit:'cloud-palace'};
 const b=(c,col,x,y,w,h)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
 function line(c,col,x,y,xx,yy,w=1){const n=Math.max(1,Math.ceil(Math.max(Math.abs(xx-x),Math.abs(yy-y))));for(let i=0;i<=n;i++)b(c,col,x+(xx-x)*i/n,y+(yy-y)*i/n,w,w);}
 function disk(c,col,x,y,r){for(let yy=-r;yy<=r;yy++){const w=Math.floor(Math.sqrt(r*r-yy*yy));b(c,col,x-w,y+yy,w*2,1);}}
@@ -19,6 +19,13 @@ export function paintRegionGround(c,a,noise){
   for(let y=40;y<453;y+=8){const bend=a.id==='thorn'?Math.sin(y*.015)*45:a.id==='rootgrove'?Math.sin(y*.021)*32:Math.sin(y*.012)*18;const x=352+bend;b(c,a.id==='stormshore'?'#cfb688':a.id==='workyard'?'#776a5c':'#8c8967',x-28,y,56,8);if(y%24===0)b(c,'#b6aa83',x-17,y,32,2);}
  }
  switch(a.id){
+ case 'oathhall':
+  for(const x of [163,484])for(const y of [75,193,315]){b(c,'#202630',x,y,56,64);b(c,'#8a909a',x,y,56,4);for(let i=0;i<6;i++){b(c,'#596371',x+i*10,y+4,3,60);b(c,'#a5afba',x+i*10,y+4,1,58);}}
+  disk(c,'#5b5351',352,244,100);circle(c,'#b99e7c',352,244,100);circle(c,'#807367',352,244,84);
+  for(const x of [312,386]){line(c,'#c2ab89',x,202,x,270,3);line(c,'#c2ab89',x,202,x+12,189,3);line(c,'#c2ab89',x,270,x-12,283,3);}
+  for(const [x,y] of [[300,172],[330,213],[344,238],[364,267],[394,310]])line(c,'#242832',x,y,x+27,y+34,4);
+  b(c,'#272d36',301,404,103,18);for(let i=0;i<9;i++)b(c,'#a0a8ac',306+i*11,404,3,18);
+  b(c,'#d9caab',309,362,11,7);b(c,'#8d6452',311,364,7,1);b(c,'#e7d9bb',388,364,7,5);b(c,'#544639',389,364,5,2);b(c,'#e7d9bb',395,365,2,2);break;
  case 'moss':for(const s of [-1,1]){line(c,'#476347',352+s*78,70,352+s*42,402,12);for(let i=0;i<9;i++){b(c,'#82946c',352+s*80,i*40+47,19,8);}}break;
  case 'crypt':for(const x of [172,466])for(const y of [78,188,303]){b(c,'#171f2b',x,y,60,60);b(c,'#647183',x,y,60,4);for(let i=0;i<6;i++)b(c,'#9aa5b5',x+i*10,y+2,2,58);}for(let i=0;i<5;i++){b(c,'#837b66',300+i*22,260,15,4);b(c,'#a1a095',303+i*22,266,10,3);}break;
  case 'thorn':for(const s of [-1,1])for(let i=0;i<13;i++){const x=352+s*(100+i%3*18),y=44+i*31;line(c,'#47403e',x,y,x+s*28,y+26,5);line(c,'#b88c83',x+s*13,y+9,x+s*22,y+3,2);b(c,'#657c59',x-5,y-8,18,14);}break;

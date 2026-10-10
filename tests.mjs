@@ -1,18 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.4.0';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.5.0';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.4.0';
-import {AdminTools} from './dist/admin.mjs?v=0.4.0';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.4.0';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.4.0';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.5.0';
+import {AdminTools} from './dist/admin.mjs?v=0.5.0';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.5.0';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.5.0';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
   let hits=0;
   while(!e.dead&&hits++<100){
     g.player.x=e.x;g.player.y=e.y+20;g.player.facing={x:0,y:-1};g.player.invulnerable=99;
-    assert.ok(g.attack());step(g,.5);
+    assert.ok(g.attack());step(g,Math.max(.5,g.player.swing.cooldown+.01));
   }
   assert.ok(e.dead,e.id);
 }
@@ -238,7 +238,7 @@ test('returning home or falling in a divine realm retains the current god and ma
  const s=g.snapshot();s.divineStep=99;assert.equal(validSave(s),false);
 });
 test('divine attacks have six patterns, readable windups, safe spaces and dodge protection',async()=>{
- const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.4.0');const patterns=new Set();
+ const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.5.0');const patterns=new Set();
  for(const ep of GOD_EPISODES){
   const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(ep.id,{x:352,y:410});const e=g.area.enemies.find(e=>e.divine);patterns.add(e.pattern);g.player.invulnerable=0;e.divineCd=0;step(g,.01);assert.ok(e.divineCast);assert.equal(g.player.hp,100);
   const zones=e.divineCast.zones;let safe;
@@ -250,15 +250,15 @@ test('divine attacks have six patterns, readable windups, safe spaces and dodge 
 });
 
 test('every boss and region has its own authored visual identity',async()=>{
- const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.4.0');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.4.0');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.4.0');
+ const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.0');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.5.0');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0');
  const ids=['warden','archivist',...CAMPAIGN_IDS.map(id=>id+'-boss'),...GOD_IDS.map(id=>id+'-god')];
  assert.equal(ids.length,18);assert.equal(new Set(ids.map(id=>BOSS_DESIGNS[id]?.shape)).size,18);assert.ok(ids.every(id=>BOSS_DESIGNS[id]?.height>30));
- assert.equal(new Set(Object.values(REGION_STYLES)).size,21);assert.ok([...CAMPAIGN_IDS,...GOD_IDS,'moss','crypt','thorn','tower','ember'].every(id=>REGION_STYLES[id]));
+ assert.equal(new Set(Object.values(REGION_STYLES)).size,22);assert.ok([...CAMPAIGN_IDS,...GOD_IDS,'moss','crypt','thorn','tower','ember'].every(id=>REGION_STYLES[id]));
  for(const id of GOD_IDS){const g=new Adventure();g.loadArea(id,{x:352,y:414});for(const p of [...g.area.exits,...g.area.chests,...g.area.npcs])assert.equal(isSolid(g.area,p.x,p.y),false,id+' '+p.id);}
 });
 
 test('divine danger deals damage at impact while guard and dodge can protect Pip',async()=>{
- const {inDivineZone}=await import('./dist/gods.mjs?v=0.4.0');
+ const {inDivineZone}=await import('./dist/gods.mjs?v=0.5.0');
  for(const defense of ['none','guard','dodge']){
   const g=new Adventure();g.start();g.loadArea('oathtribunal',{x:320,y:410});const e=g.area.enemies.find(e=>e.divine);e.divineCd=0;e.cooldown=999;g.player.invulnerable=0;step(g,.01);assert.equal(g.player.hp,100);assert.ok(e.divineCast.zones.some(z=>inDivineZone(g.player,z)));
   step(g,.8);assert.equal(g.player.hp,100);
@@ -266,4 +266,52 @@ test('divine danger deals damage at impact while guard and dodge can protect Pip
   if(defense==='dodge'){g.player.facing={x:0,y:-1};assert.ok(g.dodge());}
   step(g,.27);assert.equal(g.player.hp,defense==='none'?80:defense==='guard'?90:100);
  }
+});
+
+function oathGame(){const g=new Adventure();Object.assign(g,{storyDone:true,campaignStep:10,campaignDone:true,returned:true,truthRevealed:true});g.player.xp=100;g.start();assert.ok(g.beginBetrayal());assert.ok(g.startBetrayalDuel());return g;}
+test('Rowan betrayal unlocks after the main campaign, carries equipment, and waits for Pip’s refusal',()=>{
+ const g=new Adventure();g.start();assert.equal(g.beginBetrayal(),false);g.campaignDone=true;g.player.weaponSkin='starfall';g.inventory=[{id:'starfall',skin:'starfall',name:'Starfall',rarity:'rare',value:60}];
+ assert.ok(g.beginBetrayal());assert.equal(g.mode,'dialog');assert.equal(g.area.id,'oathhall');const rowan=g.area.enemies[0];assert.equal(rowan.dormant,true);step(g,5);assert.equal(g.player.hp,100);assert.equal(g.startBetrayalDuel(),true);assert.equal(rowan.dormant,false);assert.equal(g.player.weaponSkin,'starfall');assert.equal(g.player.ultimateCharge,100);assert.equal(g.startBetrayalDuel(),false);
+});
+test('a huge hit cannot skip Rowan’s stages, soldiers spawn once, and the aftermath waits for every soldier',()=>{
+ const g=oathGame(),rowan=g.area.enemies[0];g.damageEnemy(rowan,9999);assert.equal(rowan.dead,false);assert.equal(rowan.phase,2);assert.equal(g.betrayalStage,3);assert.equal(g.area.enemies.filter(e=>e.remnant==='spear').length,2);
+ g.damageEnemy(rowan,9999);assert.equal(rowan.phase,2);rowan.phaseRest=0;g.damageEnemy(rowan,9999);assert.equal(rowan.phase,3);assert.equal(g.area.enemies.filter(e=>e.remnant==='crossbow').length,3);
+ rowan.phaseRest=0;g.damageEnemy(rowan,9999);assert.equal(rowan.dead,true);step(g,.01);assert.equal(g.betrayalStage,4);assert.equal(g.finishBetrayal(),false);
+ for(const e of g.area.enemies.filter(e=>e.remnant))g.damageEnemy(e,9999);step(g,.01);assert.equal(g.betrayalStage,5);assert.ok(g.area.npcs.some(n=>n.id==='rowan-aftermath'));assert.ok(g.finishBetrayal());assert.equal(g.area.id,'hollow');assert.equal(g.betrayalStage,6);assert.equal(g.area.npcs.some(n=>n.id==='ally'),false);assert.ok(g.area.npcs.some(n=>n.id==='grandma-home'));
+});
+test('duel checkpoints survive saves and defeat without resetting family, divine or soldier progress',()=>{
+ const g=oathGame(),rowan=g.area.enemies[0];g.divineStep=4;g.demigodRevealed=true;g.defeated.add('lake-storm');g.damageEnemy(rowan,999);const guard=g.area.enemies.find(e=>e.remnant);g.damageEnemy(guard,999);const coins=g.player.coins;
+ const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));assert.equal(loaded.betrayalStage,3);assert.equal(loaded.mode,'playing');assert.equal(loaded.area.enemies[0].phase,2);assert.equal(loaded.area.enemies.filter(e=>e.remnant).length,1);assert.equal(loaded.player.coins,coins);loaded.player.hp=0;loaded.mode='dead';loaded.recover();assert.equal(loaded.area.id,'oathhall');assert.equal(loaded.player.hp,100);assert.equal(loaded.area.enemies[0].phase,2);assert.equal(loaded.divineStep,4);assert.equal(loaded.campaignDone,true);assert.equal(loaded.area.enemies.filter(e=>e.remnant).length,1);
+ const bad=g.snapshot();bad.betrayalStage=9;assert.equal(validSave(bad),false);bad.betrayalStage=0;assert.equal(validSave(bad),false);
+});
+test('Rowan locks her cast direction, can be dodged or parried, and frozen windups wait',()=>{
+ for(const outcome of ['hit','side','parry','backwards','frozen','guard']){
+  const g=oathGame(),e=g.area.enemies[0];e.x=352;e.y=200;e.cooldown=99;e.cast={kind:'rush',x:352,y:200,facing:{x:0,y:1},range:135,width:20,time:.04,maxTime:.95};Object.assign(g.player,{x:352,y:270,invulnerable:0,parryFacing:{x:0,y:outcome==='backwards'?1:-1},parryTime:outcome==='parry'||outcome==='backwards'?.2:0});
+  if(outcome==='side')g.player.x=400;if(outcome==='frozen')e.freeze=1;if(outcome==='guard')g.player.guardTime=1;step(g,.05);
+  assert.equal(g.player.hp,['side','parry','frozen'].includes(outcome)?100:outcome==='guard'?91:82,outcome);if(outcome==='parry')assert.ok(g.player.riposteTime>0);if(outcome==='frozen')assert.ok(e.cast);
+ }
+});
+test('remnant lancers and arbalists have different ranges, warnings, and counterplay',()=>{
+ const g=oathGame(),rowan=g.area.enemies[0];g.damageEnemy(rowan,999);rowan.phaseRest=0;g.damageEnemy(rowan,999);rowan.dormant=true;const lancer=g.area.enemies.find(e=>e.remnant==='spear'),bow=g.area.enemies.find(e=>e.remnant==='crossbow');
+ for(const e of g.area.enemies)if(e!==lancer&&e!==bow)e.dead=true;
+ lancer.x=260;lancer.y=200;bow.x=440;bow.y=200;lancer.cooldown=0;bow.cooldown=0;Object.assign(g.player,{x:310,y:200,invulnerable:0});step(g,.02);assert.equal(lancer.cast.kind,'thrust');assert.equal(bow.cast.kind,'bolt');assert.ok(bow.cast.range>lancer.cast.range);assert.ok(bow.cast.maxTime>lancer.cast.maxTime);g.player.y=250;step(g,1.3);assert.equal(g.player.hp,100);
+});
+test('all six gods guarantee their own sword, once, with a unique kit, ultimate and sprite',async()=>{
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0'),{GOD_SWORD_DROPS,GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.0'),{WEAPON_KITS}=await import('./dist/moves.mjs?v=0.5.0'),{ULTIMATES}=await import('./dist/ultimates.mjs?v=0.5.0'),{existsSync,readFileSync}=await import('node:fs');
+ const signatures=new Set(),images=new Set();
+ for(const area of GOD_IDS){const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(area);const e=g.area.enemies.find(e=>e.divine),skin=GOD_SWORD_DROPS[area];g.damageEnemy(e,9999);assert.equal(g.inventory.filter(i=>i.skin===skin).length,1);assert.equal(g.player.weaponSkin,skin);assert.ok(GOD_SWORD_IDS.includes(skin));assert.ok(!SWORD_IDS.includes(skin));assert.ok(WEAPON_KITS[skin]);assert.ok(ULTIMATES[skin]);assert.equal(WEAPON_KITS[skin].ultimate.name,ULTIMATES[skin].title);signatures.add(JSON.stringify(WEAPON_KITS[skin]));assert.ok(existsSync('dist/assets/'+skin+'.png'));images.add(readFileSync('dist/assets/'+skin+'.png').toString('base64'));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));loaded.loadArea(area);assert.equal(loaded.inventory.filter(i=>i.skin===skin).length,1);}
+ assert.equal(signatures.size,6);assert.equal(images.size,6);
+});
+test('a full satchel leaves a persistent guaranteed god sword chest instead of losing the drop',()=>{
+ const g=new Adventure();g.start();g.defeated.add('lake-storm');g.inventory=Array.from({length:200},()=>({id:'sock',name:'One lonely sock',rarity:'trash',value:3}));g.loadArea('skythreshold');g.damageEnemy(g.area.enemies.find(e=>e.divine),9999);assert.equal(g.inventory.length,200);assert.ok(g.area.chests.some(c=>c.id==='divine-sword-rimecrown'));
+ const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));const chest=loaded.area.chests.find(c=>c.id==='divine-sword-rimecrown');assert.ok(chest);loaded.sellJunk();loaded.mode='playing';assert.ok(interactAt(loaded,chest));assert.equal(loaded.player.weaponSkin,'rimecrown');loaded.loadArea('skythreshold');assert.equal(loaded.area.chests.some(c=>c.id==='divine-sword-rimecrown'),false);
+});
+test('replaying the expedition resets the betrayal encounter while preserving divine swords and old saves',()=>{
+ const g=oathGame();g.betrayalStage=6;g.defeated.add('rowan-betrayer');g.defeated.add('oath-guard-2-0');g.defeated.add('skythreshold-god');g.opened.add('divine-sword-rimecrown');g.divineStep=2;assert.ok(g.replayCampaign());assert.equal(g.betrayalStage,0);assert.equal(g.defeated.has('rowan-betrayer'),false);assert.equal(g.defeated.has('oath-guard-2-0'),false);assert.equal(g.defeated.has('skythreshold-god'),true);assert.equal(g.opened.has('divine-sword-rimecrown'),true);assert.equal(g.divineStep,2);
+ const old=new Adventure().snapshot();delete old.betrayalStage;const loaded=new Adventure();assert.ok(loaded.restore(old));assert.equal(loaded.betrayalStage,0);
+});
+
+test('returning home grants old god victories their new swords, with separate reachable chests for full bags',async()=>{
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0'),{GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.0');
+ for(const full of [false,true]){const g=new Adventure();g.start();g.defeated.add('lake-storm');for(const id of GOD_IDS)g.defeated.add(id+'-god');if(full)g.inventory=Array.from({length:200},()=>({id:'sock',name:'Sock',rarity:'trash',value:3}));g.loadArea('hollow');if(full){const chests=g.area.chests.filter(c=>c.id.startsWith('divine-sword-'));assert.equal(chests.length,6);assert.equal(new Set(chests.map(c=>c.x+','+c.y)).size,6);assert.ok(chests.every(c=>!isSolid(g.area,c.x,c.y)));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));assert.equal(loaded.area.chests.filter(c=>c.id.startsWith('divine-sword-')).length,6);}else{assert.equal(g.inventory.filter(i=>GOD_SWORD_IDS.includes(i.skin)).length,6);g.loadArea('hollow');assert.equal(g.inventory.length,6);}}
 });

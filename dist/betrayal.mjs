@@ -1,5 +1,5 @@
-import {distance,inFront,moveBody} from './core.mjs?v=0.5.0';
-import {isSolid} from './world.mjs?v=0.5.0';
+import {distance,inFront,moveBody} from './core.mjs?v=0.5.1';
+import {isSolid} from './world.mjs?v=0.5.1';
 
 export const BETRAYAL={
   title:'The Broken Oath',

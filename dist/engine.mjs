@@ -1,12 +1,13 @@
-import {ROWAN_PHASES,tickRowan,tickRemnant,restoreRowanWaves,advanceRowan,checkBetrayalClear} from './betrayal.mjs?v=0.5.0';
-import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.5.0';
-import {weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.5.0';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.0';
-import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.5.0';
-import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.5.0';
-import {SWORDS,GOD_SWORD_DROPS} from './swords.mjs?v=0.5.0';
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.5.0';
-import {makeArea,isSolid} from './world.mjs?v=0.5.0';
+import {bossEffect} from './boss-vfx.mjs?v=0.5.1';
+import {ROWAN_PHASES,tickRowan,tickRemnant,restoreRowanWaves,advanceRowan,checkBetrayalClear} from './betrayal.mjs?v=0.5.1';
+import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.5.1';
+import {weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.5.1';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.1';
+import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.5.1';
+import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.5.1';
+import {SWORDS,GOD_SWORD_DROPS} from './swords.mjs?v=0.5.1';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.5.1';
+import {makeArea,isSolid} from './world.mjs?v=0.5.1';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
@@ -81,9 +82,10 @@ export class Adventure{
       if(e.dead||e.dormant)continue;
       e.cooldown=Math.max(0,e.cooldown-dt);e.stun=Math.max(0,e.stun-dt);e.flash=Math.max(0,e.flash-dt);e.swingTime=Math.max(0,e.swingTime-dt);
       const d=distance(e,p),boss=e.kind==='boss';
+      if(boss&&d<220&&!e.vfxArrived){e.vfxArrived=true;bossEffect(this,e,'arrival');}
       if(e.id==='lake-storm'){
         e.stormCd=Math.max(0,e.stormCd-dt);
-        if(e.stormCast){e.stormCast.time-=dt;if(e.stormCast.time<=0){const strike=e.stormCast;e.stormCast=null;e.stormCd=2.5;this.effects.push({kind:'lightning',x:strike.x,y:strike.y,life:.45,maxLife:.45,r:28,color:'#91dce9'});this.burst(strike.x,strike.y,'#91dce9',24);if(!p.invulnerable&&distance(p,strike)<26){p.hp=Math.max(0,p.hp-(p.guardTime?9:18));p.invulnerable=.65;this.emit('hurt');if(!p.hp){this.mode='dead';this.emit('death');return;}}}}
+        if(e.stormCast){e.stormCast.time-=dt;if(e.stormCast.time<=0){const strike=e.stormCast;bossEffect(this,e,'strike',strike);e.stormCast=null;e.stormCd=2.5;this.effects.push({kind:'lightning',x:strike.x,y:strike.y,life:.45,maxLife:.45,r:28,color:'#91dce9'});this.burst(strike.x,strike.y,'#91dce9',24);if(!p.invulnerable&&distance(p,strike)<26){p.hp=Math.max(0,p.hp-(p.guardTime?9:18));p.invulnerable=.65;this.emit('hurt');if(!p.hp){this.mode='dead';this.emit('death');return;}}}}
         else if(!e.stormCd&&d<230)e.stormCast={x:p.x,y:p.y,time:.85};
       }
       if(e.id==='rowan-betrayer'){const busy=tickRowan(this,e,dt);if(this.mode==='dead')return;if(busy)continue;}
@@ -94,7 +96,7 @@ export class Adventure{
       if(e.windup>0){
         e.windup=Math.max(0,e.windup-dt);
         if(e.windup===0){
-          e.swingTime=.18;e.cooldown=boss?1.2:.9;
+          e.swingTime=.18;e.cooldown=boss?1.2:.9;if(boss)bossEffect(this,e,'strike');
           if(inFront(e,p,e.attackFacing,boss?38:28)&&p.parryTime&&inFront(p,e,p.parryFacing,48,Math.PI*.4)){
             this.damageEnemy(e,Math.ceil(this.attackDamage*.5));e.stun=1.1;e.cooldown=1.6;p.parryTime=0;p.riposteTime=1.5;p.ultimateCharge=Math.min(100,p.ultimateCharge+20);this.effects.push({kind:'parry',x:p.x,y:p.y,life:.4,maxLife:.4,r:27});this.burst(p.x,p.y,'#f8e0a0',14);this.emit('parried');
           }else if(!p.invulnerable&&inFront(e,p,e.attackFacing,boss?38:28)){
@@ -139,11 +141,12 @@ export class Adventure{
     const dealt=Math.min(enemy.hp,damage);
     if(charge&&this.mode!=='special')this.player.ultimateCharge=Math.min(100,this.player.ultimateCharge+12);enemy.hp=Math.max(0,enemy.hp-damage);enemy.stun=enemy.kind==='boss'?.06:.16;enemy.flash=.1;if(enemy.kind!=='boss')enemy.windup=0;
     const d=Math.max(1,distance(enemy,this.player));enemy.knockback={x:(enemy.x-this.player.x)/d*65,y:(enemy.y-this.player.y)/d*65,time:.12};this.shake=Math.max(this.shake,1.2);
+    if(enemy.kind==='boss'&&enemy.hp>0&&enemy.hp<=enemy.maxHp*.5&&!enemy.vfxFractured){enemy.vfxFractured=true;bossEffect(this,enemy,'fracture');}
     if(enemy.kind==='boss')this.effects.push({kind:'boss-impact',x:enemy.x,y:enemy.y-16,life:.45,maxLife:.45,color:enemy.color??'#e5c899'});
     this.effects.push({kind:'impact',x:enemy.x,y:enemy.y-10,life:.18,maxLife:.18,r:this.player.scrapKing?16:10,color:this.player.scrapKing?'#e4ab6c':SWORDS[this.player.weaponSkin]?.color??'#f5e4b6'});
     this.effects.push({kind:'number',x:enemy.x,y:enemy.y-20,text:String(damage),life:.6,maxLife:.6,color:'#f7d58e'});this.burst(enemy.x,enemy.y,'#b5b6c0',7);
     if(!enemy.hp&&enemy.id==='rowan-betrayer'&&advanceRowan(this,enemy))return dealt;
-    if(!enemy.hp){enemy.cast=null;enemy.dead=true;this.effects.push({kind:enemy.id==='rowan-betrayer'?'parry':'shatter',x:enemy.x,y:enemy.y-10,life:.55,maxLife:.55,r:enemy.kind==='boss'?42:24,color:'#adc4c7'});this.burst(enemy.x,enemy.y-10,'#a8b8b4',enemy.kind==='boss'?32:16);this.defeated.add(enemy.id);this.player.coins+=enemy.coins;this.gainResolve(enemy.xp);this.emit('defeated',{id:enemy.id,name:enemy.name});if(enemy.divine)this.grantGodSword(this.area.id);if(enemy.id==='lake-storm'){this.openDivinePortal();if(this.inventory.length<200){this.inventory.push({...HAMMER_LOOT});this.player.weaponSkin=HAMMER_LOOT.skin;this.opened.add('storm-hammer');this.emit('hammer-earned');}else{this.area.chests.push({id:'storm-hammer',type:'gold',x:enemy.x,y:enemy.y,loot:HAMMER_LOOT});this.emit('message',{text:'The Tempest dropped Thunderwake! Make room, then open its chest.'});}}}
+    if(!enemy.hp){if(enemy.kind==='boss')bossEffect(this,enemy,'defeat');enemy.divineCast=null;enemy.stormCast=null;enemy.cast=null;enemy.dead=true;this.effects.push({kind:enemy.id==='rowan-betrayer'?'parry':'shatter',x:enemy.x,y:enemy.y-10,life:.55,maxLife:.55,r:enemy.kind==='boss'?42:24,color:'#adc4c7'});this.burst(enemy.x,enemy.y-10,'#a8b8b4',enemy.kind==='boss'?32:16);this.defeated.add(enemy.id);this.player.coins+=enemy.coins;this.gainResolve(enemy.xp);this.emit('defeated',{id:enemy.id,name:enemy.name});if(enemy.divine)this.grantGodSword(this.area.id);if(enemy.id==='lake-storm'){this.openDivinePortal();if(this.inventory.length<200){this.inventory.push({...HAMMER_LOOT});this.player.weaponSkin=HAMMER_LOOT.skin;this.opened.add('storm-hammer');this.emit('hammer-earned');}else{this.area.chests.push({id:'storm-hammer',type:'gold',x:enemy.x,y:enemy.y,loot:HAMMER_LOOT});this.emit('message',{text:'The Tempest dropped Thunderwake! Make room, then open its chest.'});}}}
     return dealt;
   }
   attack(){

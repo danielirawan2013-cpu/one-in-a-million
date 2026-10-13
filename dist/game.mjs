@@ -1,14 +1,14 @@
-import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.5.0';
-import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.5.0';
-import {GOD_EPISODES} from './gods.mjs?v=0.5.0';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.0';
-import {EPISODES} from './campaign.mjs?v=0.5.0';
-import {SWORDS} from './swords.mjs?v=0.5.0';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.5.0';
-import {Adventure} from './engine.mjs?v=0.5.0';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.5.0';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.5.0';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.5.0';
+import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.5.1';
+import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.5.1';
+import {GOD_EPISODES} from './gods.mjs?v=0.5.1';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.1';
+import {EPISODES} from './campaign.mjs?v=0.5.1';
+import {SWORDS} from './swords.mjs?v=0.5.1';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.5.1';
+import {Adventure} from './engine.mjs?v=0.5.1';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.5.1';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.5.1';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.5.1';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');

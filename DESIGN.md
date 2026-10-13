@@ -187,3 +187,6 @@ Six guaranteed god rewards use separate crisp PNG silhouettes in the hand and in
 
 ### Divine charge and impact effects
 God charges and strikes use authored pixel marks: frost shards, oath chain links, solar flames, lunar crescents, open pages, and crowns. Match each motif to its creature and marked damage zone rather than relying on palette alone. Reduced motion fixes charge rotation, removes converging charge sparks and rising strike marks, and disables camera shake; brief impact fades, changing strike spread, and oath-seal bursts remain. Keep the warning and combat timing readable in both motion settings.
+
+### Boss combat feedback
+The focal effect is the boss's defeat: a low shockwave followed by elemental fragments. Arrival, charged attacks and armour damage use shorter supporting pulses. Trails stay near the boss or its attack direction and leave actual warning outlines readable. Reduced-motion alternatives use fewer fixed fragments and alpha fades. Concurrent spectacle effects are capped at 64 and expire within 1.8 seconds.

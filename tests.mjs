@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.5.0';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.5.1';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.5.0';
-import {AdminTools} from './dist/admin.mjs?v=0.5.0';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.5.0';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.5.0';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.5.1';
+import {AdminTools} from './dist/admin.mjs?v=0.5.1';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.5.1';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.5.1';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -238,7 +238,7 @@ test('returning home or falling in a divine realm retains the current god and ma
  const s=g.snapshot();s.divineStep=99;assert.equal(validSave(s),false);
 });
 test('divine attacks have six patterns, readable windups, safe spaces and dodge protection',async()=>{
- const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.5.0');const patterns=new Set();
+ const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.5.1');const patterns=new Set();
  for(const ep of GOD_EPISODES){
   const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(ep.id,{x:352,y:410});const e=g.area.enemies.find(e=>e.divine);patterns.add(e.pattern);g.player.invulnerable=0;e.divineCd=0;step(g,.01);assert.ok(e.divineCast);assert.equal(g.player.hp,100);
   const zones=e.divineCast.zones;let safe;
@@ -250,7 +250,7 @@ test('divine attacks have six patterns, readable windups, safe spaces and dodge 
 });
 
 test('every boss and region has its own authored visual identity',async()=>{
- const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.0');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.5.0');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0');
+ const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.1');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.5.1');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1');
  const ids=['warden','archivist',...CAMPAIGN_IDS.map(id=>id+'-boss'),...GOD_IDS.map(id=>id+'-god')];
  assert.equal(ids.length,18);assert.equal(new Set(ids.map(id=>BOSS_DESIGNS[id]?.shape)).size,18);assert.ok(ids.every(id=>BOSS_DESIGNS[id]?.height>30));
  assert.equal(new Set(Object.values(REGION_STYLES)).size,22);assert.ok([...CAMPAIGN_IDS,...GOD_IDS,'moss','crypt','thorn','tower','ember'].every(id=>REGION_STYLES[id]));
@@ -258,7 +258,7 @@ test('every boss and region has its own authored visual identity',async()=>{
 });
 
 test('divine danger deals damage at impact while guard and dodge can protect Pip',async()=>{
- const {inDivineZone}=await import('./dist/gods.mjs?v=0.5.0');
+ const {inDivineZone}=await import('./dist/gods.mjs?v=0.5.1');
  for(const defense of ['none','guard','dodge']){
   const g=new Adventure();g.start();g.loadArea('oathtribunal',{x:320,y:410});const e=g.area.enemies.find(e=>e.divine);e.divineCd=0;e.cooldown=999;g.player.invulnerable=0;step(g,.01);assert.equal(g.player.hp,100);assert.ok(e.divineCast.zones.some(z=>inDivineZone(g.player,z)));
   step(g,.8);assert.equal(g.player.hp,100);
@@ -297,7 +297,7 @@ test('remnant lancers and arbalists have different ranges, warnings, and counter
  lancer.x=260;lancer.y=200;bow.x=440;bow.y=200;lancer.cooldown=0;bow.cooldown=0;Object.assign(g.player,{x:310,y:200,invulnerable:0});step(g,.02);assert.equal(lancer.cast.kind,'thrust');assert.equal(bow.cast.kind,'bolt');assert.ok(bow.cast.range>lancer.cast.range);assert.ok(bow.cast.maxTime>lancer.cast.maxTime);g.player.y=250;step(g,1.3);assert.equal(g.player.hp,100);
 });
 test('all six gods guarantee their own sword, once, with a unique kit, ultimate and sprite',async()=>{
- const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0'),{GOD_SWORD_DROPS,GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.0'),{WEAPON_KITS}=await import('./dist/moves.mjs?v=0.5.0'),{ULTIMATES}=await import('./dist/ultimates.mjs?v=0.5.0'),{existsSync,readFileSync}=await import('node:fs');
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1'),{GOD_SWORD_DROPS,GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.1'),{WEAPON_KITS}=await import('./dist/moves.mjs?v=0.5.1'),{ULTIMATES}=await import('./dist/ultimates.mjs?v=0.5.1'),{existsSync,readFileSync}=await import('node:fs');
  const signatures=new Set(),images=new Set();
  for(const area of GOD_IDS){const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(area);const e=g.area.enemies.find(e=>e.divine),skin=GOD_SWORD_DROPS[area];g.damageEnemy(e,9999);assert.equal(g.inventory.filter(i=>i.skin===skin).length,1);assert.equal(g.player.weaponSkin,skin);assert.ok(GOD_SWORD_IDS.includes(skin));assert.ok(!SWORD_IDS.includes(skin));assert.ok(WEAPON_KITS[skin]);assert.ok(ULTIMATES[skin]);assert.equal(WEAPON_KITS[skin].ultimate.name,ULTIMATES[skin].title);signatures.add(JSON.stringify(WEAPON_KITS[skin]));assert.ok(existsSync('dist/assets/'+skin+'.png'));images.add(readFileSync('dist/assets/'+skin+'.png').toString('base64'));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));loaded.loadArea(area);assert.equal(loaded.inventory.filter(i=>i.skin===skin).length,1);}
  assert.equal(signatures.size,6);assert.equal(images.size,6);
@@ -312,6 +312,19 @@ test('replaying the expedition resets the betrayal encounter while preserving di
 });
 
 test('returning home grants old god victories their new swords, with separate reachable chests for full bags',async()=>{
- const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.0'),{GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.0');
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1'),{GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.1');
  for(const full of [false,true]){const g=new Adventure();g.start();g.defeated.add('lake-storm');for(const id of GOD_IDS)g.defeated.add(id+'-god');if(full)g.inventory=Array.from({length:200},()=>({id:'sock',name:'Sock',rarity:'trash',value:3}));g.loadArea('hollow');if(full){const chests=g.area.chests.filter(c=>c.id.startsWith('divine-sword-'));assert.equal(chests.length,6);assert.equal(new Set(chests.map(c=>c.x+','+c.y)).size,6);assert.ok(chests.every(c=>!isSolid(g.area,c.x,c.y)));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));assert.equal(loaded.area.chests.filter(c=>c.id.startsWith('divine-sword-')).length,6);}else{assert.equal(g.inventory.filter(i=>GOD_SWORD_IDS.includes(i.skin)).length,6);g.loadArea('hollow');assert.equal(g.inventory.length,6);}}
+});
+
+test('boss feedback follows arrival, strike, damaged armour and defeat without repeating',()=>{
+ const g=new Adventure();g.start();g.loadArea('crypt',{x:352,y:210});const e=g.area.enemies.find(e=>e.id==='warden');g.player.invulnerable=99;
+ step(g,.01);assert.equal(g.effects.filter(f=>f.phase==='arrival').length,1);step(g,.02);assert.equal(g.effects.filter(f=>f.phase==='arrival').length,1);
+ e.windup=.01;e.attackFacing={x:0,y:1};step(g,.02);assert.ok(g.effects.some(f=>f.phase==='strike'));
+ g.damageEnemy(e,Math.ceil(e.maxHp*.6));assert.equal(g.effects.filter(f=>f.phase==='fracture').length,1);g.damageEnemy(e,1);assert.equal(g.effects.filter(f=>f.phase==='fracture').length,1);
+ e.divineCast={time:1,zones:[]};e.stormCast={time:1,x:352,y:210};g.damageEnemy(e,9999);assert.equal(g.effects.filter(f=>f.phase==='defeat').length,1);assert.equal(e.divineCast,null);assert.equal(e.stormCast,null);g.damageEnemy(e,9999);assert.equal(g.effects.filter(f=>f.phase==='defeat').length,1);assert.equal(g.player.hp,100);
+ step(g,2);assert.equal(g.effects.some(f=>f.kind==='boss-spectacle'),false);
+});
+test('boss effects are capped, themed for every boss and absent on regular enemies',async()=>{
+ const {BOSS_FX_THEMES,BOSS_FX_LIMIT,bossEffect}=await import('./dist/boss-vfx.mjs?v=0.5.1');const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.1');
+ assert.ok(Object.keys(BOSS_DESIGNS).every(id=>BOSS_FX_THEMES[id]));const g=new Adventure();const e={id:'warden',kind:'boss',x:350,y:190};for(let i=0;i<200;i++)bossEffect(g,e,'strike');assert.equal(g.effects.length,BOSS_FX_LIMIT);assert.equal(bossEffect(g,{...e,kind:'guard'},'strike'),false);assert.equal(bossEffect(g,{...e,dormant:true},'strike'),false);assert.equal(bossEffect(g,e,'missing'),false);
 });

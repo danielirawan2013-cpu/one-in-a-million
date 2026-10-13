@@ -1,7 +1,7 @@
-import {SWORDS} from './swords.mjs?v=0.5.0';
-import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.5.0';
-import {isSolid} from './world.mjs?v=0.5.0';
-import {ultimateKey} from './ultimates.mjs?v=0.5.0';
+import {SWORDS} from './swords.mjs?v=0.5.1';
+import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.5.1';
+import {isSolid} from './world.mjs?v=0.5.1';
+import {ultimateKey} from './ultimates.mjs?v=0.5.1';
 
 export const ABILITY_KEYS=['sweep','guard','charge','mend','cyclone','stars'];
 export const ABILITY_LEVELS={sweep:1,guard:2,charge:3,mend:1,cyclone:2,stars:3};

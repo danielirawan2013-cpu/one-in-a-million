@@ -190,3 +190,6 @@ God charges and strikes use authored pixel marks: frost shards, oath chain links
 
 ### Boss combat feedback
 The focal effect is the boss's defeat: a low shockwave followed by elemental fragments. Arrival, charged attacks and armour damage use shorter supporting pulses. Trails stay near the boss or its attack direction and leave actual warning outlines readable. Reduced-motion alternatives use fewer fixed fragments and alpha fades. Concurrent spectacle effects are capped at 64 and expire within 1.8 seconds.
+
+### Health and ultimate feedback
+Low health uses a persistent oxblood banner, pale text, red health styling, and a static viewport outline. A potion button and H shortcut explain recovery; empty supplies get a retreat message. Warning is suppressed for dialogs and death, and clears above 25 HP. Every ultimate now has an authored composition tied to its geometry: solar cannon, returning moons, faultline, ice spokes, binding roots, imploding well, chained lightning, dragon breath, life siphon, meteor markers, phantom attackers, storm hammer, royal cleaver, glacial wyrm, oath chains, phoenix, closing tides, rewind clock, and heavenly crossfire. Reduced motion holds the composition still and uses the existing short cinematic path.

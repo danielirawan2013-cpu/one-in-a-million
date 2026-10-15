@@ -1,14 +1,15 @@
-import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.5.1';
-import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.5.1';
-import {GOD_EPISODES} from './gods.mjs?v=0.5.1';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.1';
-import {EPISODES} from './campaign.mjs?v=0.5.1';
-import {SWORDS} from './swords.mjs?v=0.5.1';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.5.1';
-import {Adventure} from './engine.mjs?v=0.5.1';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.5.1';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.5.1';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.5.1';
+import {ULTIMATE_PATTERNS} from './ultimate-patterns.mjs?v=0.6.0';
+import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.6.0';
+import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.6.0';
+import {GOD_EPISODES} from './gods.mjs?v=0.6.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.6.0';
+import {EPISODES} from './campaign.mjs?v=0.6.0';
+import {SWORDS} from './swords.mjs?v=0.6.0';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.6.0';
+import {Adventure} from './engine.mjs?v=0.6.0';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.6.0';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.6.0';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.6.0';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -16,7 +17,7 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const input={up:false,down:false,left:false,right:false,attack:false,charge:false};
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const adminTools=new AdminTools();
-let adventureStarted=false,adminReturn=null,adminNotice='';
+let adventureStarted=false,adminReturn=null,adminNotice='',lowHealthAnnounced=false;
 let background,lastTime=0,uiClock=0,saveClock=0,toastTimer,saveAvailable=true,saved=null,soundEnabled=false,audio=null,previousMode='playing',game;
 const camera={x:112,y:140};
 try{const parsed=JSON.parse(localStorage.getItem(SAVE_KEY));if(validSave(parsed))saved=parsed;}catch{saveAvailable=false;}
@@ -49,6 +50,12 @@ function intro(){
 }
 function updateUI(){
   const p=game.player,stage=game.stage;
+  const lowHealth=adventureStarted&&p.hp>0&&p.hp<=25,showHealthWarning=lowHealth&&['playing','special'].includes(game.mode);
+  $('viewport').classList.toggle('is-low-health',showHealthWarning);$('low-health-warning').hidden=!showHealthWarning;
+  const healthMessage=p.potions?'Low health! Heal before the next hit.':'Low health! Dodge away and find a potion.';
+  if($('low-health-message').textContent!==healthMessage)$('low-health-message').textContent=healthMessage;
+  $('low-health-heal').hidden=!p.potions;$('low-health-heal').disabled=game.mode!=='playing';
+  if(showHealthWarning&&!lowHealthAnnounced){lowHealthAnnounced=true;audioCue('hurt');}if(!lowHealth)lowHealthAnnounced=false;
   $('health-fill').style.width=p.hp+'%';$('health-text').textContent=p.hp+' / 100';$('coins').textContent=p.coins;
   $('location').textContent=game.area.name;$('location-note').textContent=game.area.note;
   $('chapter-label').textContent=game.area.id==='oathhall'?'Epilogue':'Chapter '+['','one','two','three','four','five','six','seven','eight','nine','ten','eleven'][game.chapter];
@@ -63,7 +70,7 @@ function updateUI(){
   const ultSkin=ultimateKey(p),ult=ULTIMATES[ultSkin];
   $('special-action').hidden=false;$('special-action').disabled=game.mode!=='playing'||p.specialCd>0||p.ultimateCharge<100||p.scrapKing&&!p.specialUnlocked||!p.scrapKing&&(!stage||!ult);
   $('special-label').textContent=(ult?.title??'Ultimate')+(p.specialCd>0?' · '+Math.ceil(p.specialCd)+'s':'');
-  $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing?'Unlock your first potential stage.':'Press V to unleash your ultimate.';
+  $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing?'Unlock your first potential stage.':'V · '+ULTIMATE_PATTERNS[ultSkin].description;
   $('ultimate-fill').style.width=p.ultimateCharge+'%';$('ultimate-charge').textContent=Math.floor(p.ultimateCharge)+' / 100';$('channel-action').disabled=game.mode!=='playing'||p.ultimateCharge>=100;
 
   const titles=['A sleeping spark','The first spark','A growing flame','A heart awakened'];
@@ -320,7 +327,7 @@ for(const button of document.querySelectorAll('[data-move]')){
 }
 $('touch-attack').addEventListener('pointerdown',e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);if(game.mode==='playing'){input.attack=true;game.attack();}});
 for(const kind of ['pointerup','pointercancel','lostpointercapture'])$('touch-attack').addEventListener(kind,()=>input.attack=false);
-$('touch-interact').onclick=()=>game.interact();$('touch-dodge').onclick=()=>game.dodge();$('touch-parry').onclick=()=>game.parry();$('heal-action').onclick=()=>{game.heal();canvas.focus({preventScroll:true});};$('power-action').onclick=()=>{game.power();canvas.focus({preventScroll:true});};
+$('touch-interact').onclick=()=>game.interact();$('touch-dodge').onclick=()=>game.dodge();$('touch-parry').onclick=()=>game.parry();$('heal-action').onclick=()=>{game.heal();canvas.focus({preventScroll:true});};$('low-health-heal').onclick=()=>{game.heal();canvas.focus({preventScroll:true});};$('power-action').onclick=()=>{game.power();canvas.focus({preventScroll:true});};
 $('inventory').addEventListener('click',e=>{const button=e.target.closest('[data-equip]');if(button&&adventureStarted&&game.mode==='playing'){game.equipSword(button.dataset.equip);updateUI();canvas.focus({preventScroll:true});}});
 $('special-action').onclick=()=>{game.special({reducedMotion});canvas.focus({preventScroll:true});};
 $('channel-action').addEventListener('pointerdown',e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);if(game.mode==='playing')input.charge=true;});

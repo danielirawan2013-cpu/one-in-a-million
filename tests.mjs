@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.5.1';
+import {rollLoot,stageFor,validSave,moveBody,LOOT_ODDS} from './dist/core.mjs?v=0.6.0';
 import {Adventure} from './dist/engine.mjs';
-import {isSolid,AREAS} from './dist/world.mjs?v=0.5.1';
-import {AdminTools} from './dist/admin.mjs?v=0.5.1';
-import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.5.1';
-import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.5.1';
+import {isSolid,AREAS} from './dist/world.mjs?v=0.6.0';
+import {AdminTools} from './dist/admin.mjs?v=0.6.0';
+import {SWORDS,SWORD_IDS} from './dist/swords.mjs?v=0.6.0';
+import {EPISODES,CAMPAIGN_IDS} from './dist/campaign.mjs?v=0.6.0';
 
 function step(g,seconds,input={}){for(let t=0;t<seconds-1e-6;t+=.01)g.tick(Math.min(.01,seconds-t),input);}
 function beat(g,e){
@@ -170,7 +170,7 @@ test('admin item picker grants every item and validates quantities without parti
 });
 test('King’s Verdict requires an admin unlock and Scrap King, plays before impact, and keeps story gates',()=>{
   const events=[],g=new Adventure({onEvent:e=>events.push(e)});g.start();const admin=new AdminTools();assert.equal(g.special(),false);admin.unlock('3275');admin.run('special',g);assert.equal(g.special(),false,'ordinary swords cannot use the move');admin.run('equip',g);assert.ok(g.special());assert.equal(g.mode,'special');assert.equal(g.attack(),false);
-  const target=g.area.enemies[0];step(g,1);assert.equal(target.hp,target.maxHp,'damage waits for cutscene impact');step(g,1.7);assert.ok(target.dead);assert.equal(g.mode,'playing');assert.ok(g.player.specialCd>0);assert.equal(g.special(),false,'special has a cooldown');assert.ok(events.some(e=>e.type==='special-start'));assert.ok(events.some(e=>e.type==='special-end'));
+  const target=g.area.enemies[0];step(g,1);assert.equal(target.hp,target.maxHp,'damage waits for cutscene impact');step(g,2.3);assert.ok(target.dead);assert.equal(g.mode,'playing');assert.ok(g.player.specialCd>0);assert.equal(g.special(),false,'special has a cooldown');assert.ok(events.some(e=>e.type==='special-start'));assert.ok(events.some(e=>e.type==='special-end'));
   g.loadArea('ember',{x:352,y:240});g.player.specialCd=0;g.player.ultimateCharge=100;assert.ok(g.special({reducedMotion:true}));step(g,.7);assert.equal(g.area.enemies.find(e=>e.id==='collector').hp,300,'does not bypass Grandma’s reveal');assert.equal(g.mode,'playing');assert.ok(g.snapshot().player.specialUnlocked);
 });
 
@@ -199,12 +199,12 @@ test('six abilities unlock with potential and enforce their cooldowns',()=>{
 });
 test('all sword ultimates need a full meter, retain separate themes and consume charge',()=>{
  const motifs=new Set();
- for(const skin of SWORD_IDS){const g=new Adventure();g.start();g.player.xp=12;g.inventory.push({id:skin,skin,name:SWORDS[skin].name,rarity:'rare',value:60});g.equipSword(skin);assert.equal(g.special(),false);step(g,5.6,{charge:true});assert.equal(g.player.ultimateCharge,100);assert.ok(g.special());assert.equal(g.player.ultimateCharge,0);assert.equal(g.specialScene.skin,skin);motifs.add(g.specialScene.theme.motif);step(g,2.7);assert.equal(g.mode,'playing');assert.equal(g.special(),false);}
+ for(const skin of SWORD_IDS){const g=new Adventure();g.start();g.player.xp=12;g.inventory.push({id:skin,skin,name:SWORDS[skin].name,rarity:'rare',value:60});g.equipSword(skin);assert.equal(g.special(),false);step(g,5.6,{charge:true});assert.equal(g.player.ultimateCharge,100);assert.ok(g.special());assert.equal(g.player.ultimateCharge,0);assert.equal(g.specialScene.skin,skin);motifs.add(g.specialScene.theme.motif);step(g,3.6);assert.equal(g.mode,'playing');assert.equal(g.special(),false);}
  assert.ok(motifs.size>=9);
 });
 
 test('the hammer also supports its own charged ultimate',()=>{
- const g=new Adventure();g.start();g.player.xp=12;g.player.weaponSkin='thunderhammer';g.player.ultimateCharge=100;assert.ok(g.special());assert.equal(g.specialScene.theme.title,'Tempest Judgement');assert.equal(g.player.ultimateCharge,0);
+ const g=new Adventure();g.start();g.player.xp=12;g.player.weaponSkin='thunderhammer';g.player.ultimateCharge=100;assert.ok(g.special());assert.equal(g.specialScene.theme.title,'Skybreak Smash');assert.equal(g.player.ultimateCharge,0);
 });
 
 test('the three starter swords have different ultimate names and retain their own weapon',()=>{
@@ -238,7 +238,7 @@ test('returning home or falling in a divine realm retains the current god and ma
  const s=g.snapshot();s.divineStep=99;assert.equal(validSave(s),false);
 });
 test('divine attacks have six patterns, readable windups, safe spaces and dodge protection',async()=>{
- const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.5.1');const patterns=new Set();
+ const {GOD_EPISODES,divineZones,inDivineZone}=await import('./dist/gods.mjs?v=0.6.0');const patterns=new Set();
  for(const ep of GOD_EPISODES){
   const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(ep.id,{x:352,y:410});const e=g.area.enemies.find(e=>e.divine);patterns.add(e.pattern);g.player.invulnerable=0;e.divineCd=0;step(g,.01);assert.ok(e.divineCast);assert.equal(g.player.hp,100);
   const zones=e.divineCast.zones;let safe;
@@ -250,7 +250,7 @@ test('divine attacks have six patterns, readable windups, safe spaces and dodge 
 });
 
 test('every boss and region has its own authored visual identity',async()=>{
- const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.1');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.5.1');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1');
+ const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.6.0');const {REGION_STYLES}=await import('./dist/region-art.mjs?v=0.6.0');const {GOD_IDS}=await import('./dist/gods.mjs?v=0.6.0');
  const ids=['warden','archivist',...CAMPAIGN_IDS.map(id=>id+'-boss'),...GOD_IDS.map(id=>id+'-god')];
  assert.equal(ids.length,18);assert.equal(new Set(ids.map(id=>BOSS_DESIGNS[id]?.shape)).size,18);assert.ok(ids.every(id=>BOSS_DESIGNS[id]?.height>30));
  assert.equal(new Set(Object.values(REGION_STYLES)).size,22);assert.ok([...CAMPAIGN_IDS,...GOD_IDS,'moss','crypt','thorn','tower','ember'].every(id=>REGION_STYLES[id]));
@@ -258,7 +258,7 @@ test('every boss and region has its own authored visual identity',async()=>{
 });
 
 test('divine danger deals damage at impact while guard and dodge can protect Pip',async()=>{
- const {inDivineZone}=await import('./dist/gods.mjs?v=0.5.1');
+ const {inDivineZone}=await import('./dist/gods.mjs?v=0.6.0');
  for(const defense of ['none','guard','dodge']){
   const g=new Adventure();g.start();g.loadArea('oathtribunal',{x:320,y:410});const e=g.area.enemies.find(e=>e.divine);e.divineCd=0;e.cooldown=999;g.player.invulnerable=0;step(g,.01);assert.equal(g.player.hp,100);assert.ok(e.divineCast.zones.some(z=>inDivineZone(g.player,z)));
   step(g,.8);assert.equal(g.player.hp,100);
@@ -297,7 +297,7 @@ test('remnant lancers and arbalists have different ranges, warnings, and counter
  lancer.x=260;lancer.y=200;bow.x=440;bow.y=200;lancer.cooldown=0;bow.cooldown=0;Object.assign(g.player,{x:310,y:200,invulnerable:0});step(g,.02);assert.equal(lancer.cast.kind,'thrust');assert.equal(bow.cast.kind,'bolt');assert.ok(bow.cast.range>lancer.cast.range);assert.ok(bow.cast.maxTime>lancer.cast.maxTime);g.player.y=250;step(g,1.3);assert.equal(g.player.hp,100);
 });
 test('all six gods guarantee their own sword, once, with a unique kit, ultimate and sprite',async()=>{
- const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1'),{GOD_SWORD_DROPS,GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.1'),{WEAPON_KITS}=await import('./dist/moves.mjs?v=0.5.1'),{ULTIMATES}=await import('./dist/ultimates.mjs?v=0.5.1'),{existsSync,readFileSync}=await import('node:fs');
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.6.0'),{GOD_SWORD_DROPS,GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.6.0'),{WEAPON_KITS}=await import('./dist/moves.mjs?v=0.6.0'),{ULTIMATES}=await import('./dist/ultimates.mjs?v=0.6.0'),{existsSync,readFileSync}=await import('node:fs');
  const signatures=new Set(),images=new Set();
  for(const area of GOD_IDS){const g=new Adventure();g.start();g.defeated.add('lake-storm');g.loadArea(area);const e=g.area.enemies.find(e=>e.divine),skin=GOD_SWORD_DROPS[area];g.damageEnemy(e,9999);assert.equal(g.inventory.filter(i=>i.skin===skin).length,1);assert.equal(g.player.weaponSkin,skin);assert.ok(GOD_SWORD_IDS.includes(skin));assert.ok(!SWORD_IDS.includes(skin));assert.ok(WEAPON_KITS[skin]);assert.ok(ULTIMATES[skin]);assert.equal(WEAPON_KITS[skin].ultimate.name,ULTIMATES[skin].title);signatures.add(JSON.stringify(WEAPON_KITS[skin]));assert.ok(existsSync('dist/assets/'+skin+'.png'));images.add(readFileSync('dist/assets/'+skin+'.png').toString('base64'));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));loaded.loadArea(area);assert.equal(loaded.inventory.filter(i=>i.skin===skin).length,1);}
  assert.equal(signatures.size,6);assert.equal(images.size,6);
@@ -312,7 +312,7 @@ test('replaying the expedition resets the betrayal encounter while preserving di
 });
 
 test('returning home grants old god victories their new swords, with separate reachable chests for full bags',async()=>{
- const {GOD_IDS}=await import('./dist/gods.mjs?v=0.5.1'),{GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.5.1');
+ const {GOD_IDS}=await import('./dist/gods.mjs?v=0.6.0'),{GOD_SWORD_IDS}=await import('./dist/swords.mjs?v=0.6.0');
  for(const full of [false,true]){const g=new Adventure();g.start();g.defeated.add('lake-storm');for(const id of GOD_IDS)g.defeated.add(id+'-god');if(full)g.inventory=Array.from({length:200},()=>({id:'sock',name:'Sock',rarity:'trash',value:3}));g.loadArea('hollow');if(full){const chests=g.area.chests.filter(c=>c.id.startsWith('divine-sword-'));assert.equal(chests.length,6);assert.equal(new Set(chests.map(c=>c.x+','+c.y)).size,6);assert.ok(chests.every(c=>!isSolid(g.area,c.x,c.y)));const loaded=new Adventure();assert.ok(loaded.restore(g.snapshot()));assert.equal(loaded.area.chests.filter(c=>c.id.startsWith('divine-sword-')).length,6);}else{assert.equal(g.inventory.filter(i=>GOD_SWORD_IDS.includes(i.skin)).length,6);g.loadArea('hollow');assert.equal(g.inventory.length,6);}}
 });
 
@@ -325,6 +325,35 @@ test('boss feedback follows arrival, strike, damaged armour and defeat without r
  step(g,2);assert.equal(g.effects.some(f=>f.kind==='boss-spectacle'),false);
 });
 test('boss effects are capped, themed for every boss and absent on regular enemies',async()=>{
- const {BOSS_FX_THEMES,BOSS_FX_LIMIT,bossEffect}=await import('./dist/boss-vfx.mjs?v=0.5.1');const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.5.1');
+ const {BOSS_FX_THEMES,BOSS_FX_LIMIT,bossEffect}=await import('./dist/boss-vfx.mjs?v=0.6.0');const {BOSS_DESIGNS}=await import('./dist/boss-art.mjs?v=0.6.0');
  assert.ok(Object.keys(BOSS_DESIGNS).every(id=>BOSS_FX_THEMES[id]));const g=new Adventure();const e={id:'warden',kind:'boss',x:350,y:190};for(let i=0;i<200;i++)bossEffect(g,e,'strike');assert.equal(g.effects.length,BOSS_FX_LIMIT);assert.equal(bossEffect(g,{...e,kind:'guard'},'strike'),false);assert.equal(bossEffect(g,{...e,dormant:true},'strike'),false);assert.equal(bossEffect(g,e,'missing'),false);
+});
+
+function ultimateArena(key){
+ const g=new Adventure();g.start();g.loadArea('crypt',{x:352,y:280});g.area.objects=[];g.area.npcs=[];g.area.chests=[];g.player.hp=40;g.player.xp=80;g.player.ultimateCharge=100;g.player.invulnerable=99;g.player.facing={x:0,y:-1};
+ if(key==='scrap-king'){g.player.scrapKing=true;g.player.specialUnlocked=true;}else if(['battered','ironshort','classicdawn'].includes(key))g.player.weapon={battered:5,ironshort:8,classicdawn:12}[key];else g.player.weaponSkin=key;
+ g.area.enemies=[[352,220],[352,100],[352,390],[230,280],[470,280],[420,160],[270,160],[430,380]].map(([x,y],i)=>({id:'dummy-'+i,kind:'guard',name:'Training target',x,y,hp:10000,maxHp:10000,damage:0,xp:0,coins:0,cooldown:99,stun:0,flash:0,windup:0,swingTime:0,root:99}));
+ return g;
+}
+test('all 22 weapons execute distinct timed ultimates with no fallback or leftover queue',async()=>{
+ const {ULTIMATE_PATTERNS}=await import('./dist/ultimate-patterns.mjs?v=0.6.0');const {ULTIMATES}=await import('./dist/ultimates.mjs?v=0.6.0');const {WEAPON_KITS}=await import('./dist/moves.mjs?v=0.6.0');const signatures=new Set();
+ assert.equal(Object.keys(ULTIMATE_PATTERNS).length,22);assert.deepEqual(Object.keys(ULTIMATE_PATTERNS).sort(),Object.keys(WEAPON_KITS).sort());
+ for(const key of Object.keys(ULTIMATE_PATTERNS)){
+  const g=ultimateArena(key),hits=[],original=g.damageEnemy.bind(g);g.damageEnemy=(enemy,amount,opts)=>{hits.push([enemy.id,Math.round(g.time*10)/10,amount]);return original(enemy,amount,opts);};g.memoryTrail=[{x:352,y:300,hp:85},{x:400,y:270,hp:70},{x:360,y:250,hp:40}];
+  assert.ok(g.special(),key);const scene=g.specialScene;assert.equal(scene.skin,key);assert.equal(scene.theme.title,ULTIMATES[key].title);assert.equal(scene.duration,ULTIMATE_PATTERNS[key].duration);step(g,scene.duration+.01);assert.equal(g.mode,'playing',key);step(g,2);assert.equal(g.pendingMoves.length,0,key);assert.ok(hits.length>0,key+' hits a target');assert.equal(g.player.ultimateCharge,0,key+' cannot recharge itself');assert.equal(g.special(),false,key+' has cooldown');signatures.add(JSON.stringify(hits));
+ }
+ assert.equal(signatures.size,22,'the actual hit sequences differ, not only names or palettes');
+});
+test('solar cannon is directional while the underdog shockwaves reach enemies behind Pip',()=>{
+ const solar=ultimateArena('dawnblade');solar.special();step(solar,3.3);assert.ok(solar.area.enemies[0].hp<10000);assert.equal(solar.area.enemies[2].hp,10000);assert.equal(solar.player.hp,40,'solar cannon is an attack');
+ const underdog=ultimateArena('battered');underdog.special();step(underdog,2.8);assert.ok(underdog.area.enemies[2].hp<10000);
+ const guardian=ultimateArena('classicdawn');guardian.special();step(guardian,2.8);assert.equal(guardian.player.hp,75,'guardian sunrise restores health');
+});
+test('memory sword restores recent lost health and tidal walls hit from opposite sides',()=>{
+ const memory=ultimateArena('recollection');memory.memoryTrail=[{x:352,y:280,hp:88},{x:380,y:280,hp:40}];memory.special();step(memory,1.4);assert.equal(memory.player.hp,88);
+ const tides=ultimateArena('tidemirror');tides.special();step(tides,3.5);assert.ok(tides.area.enemies[3].hp<10000,'left wall');assert.ok(tides.area.enemies[4].hp<10000,'right wall');
+});
+test('every ultimate preserves dormant story bosses, reduced-motion timing, and area cleanup',async()=>{
+ const {ULTIMATE_PATTERNS}=await import('./dist/ultimate-patterns.mjs?v=0.6.0');
+ for(const key of Object.keys(ULTIMATE_PATTERNS)){const g=ultimateArena(key);g.area.enemies[0].dormant=true;g.special({reducedMotion:true});step(g,.7);assert.equal(g.mode,'playing');step(g,2);assert.equal(g.area.enemies[0].hp,10000,key);g.loadArea('hollow');assert.equal(g.pendingMoves.length,0);assert.equal(g.memoryTrail.length,0);}
 });

@@ -1,6 +1,6 @@
-import {REGION_STYLES} from './region-art.mjs?v=0.5.1';
-import {GOD_IDS,godArea} from './gods.mjs?v=0.5.1';
-import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.5.1';
+import {REGION_STYLES} from './region-art.mjs?v=0.6.0';
+import {GOD_IDS,godArea} from './gods.mjs?v=0.6.0';
+import {CAMPAIGN_IDS,campaignArea} from './campaign.mjs?v=0.6.0';
 export const TILE=16, COLS=44, ROWS=30, WIDTH=COLS*TILE, HEIGHT=ROWS*TILE;
 export const AREAS={
   oathhall:{name:'The Broken Oath Hall',note:'The door Rowan locked herself.',caption:'Watch the marked attacks. Dodge sideways; face the attacker to parry.',palette:['#393b45','#444651','#50525e','#827c73'],ground:'stone',spawn:{x:352,y:390},exits:[],chests:[],npcs:[],enemies:[{id:'rowan-betrayer',name:'Rowan · The Broken Oath',kind:'boss',x:352,y:205,hp:250,damage:15,xp:50,coins:75}]},

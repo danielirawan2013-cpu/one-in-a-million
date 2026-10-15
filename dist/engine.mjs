@@ -1,19 +1,20 @@
-import {bossEffect} from './boss-vfx.mjs?v=0.5.1';
-import {ROWAN_PHASES,tickRowan,tickRemnant,restoreRowanWaves,advanceRowan,checkBetrayalClear} from './betrayal.mjs?v=0.5.1';
-import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.5.1';
-import {weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.5.1';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.5.1';
-import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.5.1';
-import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.5.1';
-import {SWORDS,GOD_SWORD_DROPS} from './swords.mjs?v=0.5.1';
-import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.5.1';
-import {makeArea,isSolid} from './world.mjs?v=0.5.1';
+import {ULTIMATE_PATTERNS} from './ultimate-patterns.mjs?v=0.6.0';
+import {bossEffect} from './boss-vfx.mjs?v=0.6.0';
+import {ROWAN_PHASES,tickRowan,tickRemnant,restoreRowanWaves,advanceRowan,checkBetrayalClear} from './betrayal.mjs?v=0.6.0';
+import {GOD_EPISODES,GOD_IDS,tickDivine} from './gods.mjs?v=0.6.0';
+import {performUltimate,weaponKit,weaponSwing,weaponColor,performMove,tickWeaponMoves,basicWeaponHit,ABILITY_LEVELS} from './moves.mjs?v=0.6.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.6.0';
+import {HAMMER_LOOT,lightningBoss,canSummonStorm} from './lightning.mjs?v=0.6.0';
+import {EPISODES,CAMPAIGN_IDS} from './campaign.mjs?v=0.6.0';
+import {SWORDS,GOD_SWORD_DROPS} from './swords.mjs?v=0.6.0';
+import {clamp,distance,stageFor,rollLoot,moveBody,validSave,SWORD_SWING,inFront} from './core.mjs?v=0.6.0';
+import {makeArea,isSolid} from './world.mjs?v=0.6.0';
 
 export class Adventure{
   constructor({random=Math.random,onEvent=()=>{}}={}){
     this.random=random;this.onEvent=onEvent;this.mode='title';this.inventory=[];this.opened=new Set();this.defeated=new Set();this.rescued=false;this.returned=false;this.knightMet=false;this.familyProof=false;this.truthRevealed=false;this.chapter2Started=false;this.storyDone=false;this.campaignStep=0;this.campaignDone=false;this.divineStep=0;this.divineDone=false;this.demigodRevealed=false;this.betrayalStage=0;
     this.player={x:352,y:340,hp:100,xp:0,coins:0,potions:3,weapon:5,scrapKing:false,scrapKingOwned:false,ultimateCharge:0,weaponSkin:null,specialUnlocked:false,specialCd:0,lightningCd:0,sweepCd:0,guardCd:0,chargeCd:0,guardTime:0,mendCd:0,cycloneCd:0,starsCd:0,boots:false,pendant:false,facing:{x:0,y:1},attackFacing:{x:0,y:1},attackHit:false,attackTime:0,attackCd:0,parryTime:0,parryCd:0,riposteTime:0,parryFacing:{x:0,y:1},powerCd:0,dodgeTime:0,dodgeCd:0,invulnerable:0,hurtFlash:0};
-    this.area=makeArea('hollow');this.effects=[];this.particles=[];this.time=0;this.shake=0;this.specialScene=null;this.pendingMoves=[];this.hint=null;this.dirty=true;
+    this.area=makeArea('hollow');this.effects=[];this.particles=[];this.time=0;this.shake=0;this.specialScene=null;this.pendingMoves=[];this.memoryTrail=[];this.memoryClock=0;this.hint=null;this.dirty=true;
   }
   get stage(){return stageFor(this.player.xp);}
   get attackDamage(){return this.player.scrapKing?999:(SWORDS[this.player.weaponSkin]?.damage??this.player.weapon)+[0,3,6,9][this.stage];}
@@ -46,15 +47,15 @@ export class Adventure{
     if(id==='hollow'&&this.storyDone&&this.betrayalStage===6)this.area.npcs.push({id:'grandma-home',kind:'dragon',x:404,y:302,label:'Talk to Grandma'});
     if(id==='oathhall')restoreRowanWaves(this);
     if(id==='ember'){this.area.enemies.find(e=>e.id==='collector').dormant=!this.truthRevealed;if(this.truthRevealed){const ally=this.area.npcs.find(n=>n.id==='rowan');ally.id='ally';ally.x=471;ally.y=390;}}
-    this.player.invulnerable=1.1;this.player.attackTime=0;this.player.attackCd=0;this.player.dodgeTime=0;this.player.parryTime=0;this.player.riposteTime=0;this.player.guardTime=0;this.specialScene=null;this.pendingMoves=[];this.player.weaponWard=null;this.effects=[];this.particles=[];this.hint=null;this.emit('area',{area:id});
+    this.player.invulnerable=1.1;this.player.attackTime=0;this.player.attackCd=0;this.player.dodgeTime=0;this.player.parryTime=0;this.player.riposteTime=0;this.player.guardTime=0;this.specialScene=null;this.pendingMoves=[];this.memoryTrail=[];this.memoryClock=0;this.player.weaponWard=null;this.effects=[];this.particles=[];this.hint=null;this.emit('area',{area:id});
   }
   tick(dt,input={}){
     dt=clamp(dt,0,.05);this.time+=dt;this.shake=Math.max(0,this.shake-dt*18);
     this.effects=this.effects.filter(e=>(e.life-=dt)>0);this.particles=this.particles.filter(p=>{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=20*dt;return p.life>0;});
     if(this.mode==='special'){
       const scene=this.specialScene;scene.elapsed+=dt;
-      if(!scene.hit&&scene.elapsed>=scene.duration*.68){
-        scene.hit=true;performMove(this,scene.move,{origin:scene.origin,facing:scene.facing,damage:scene.damage,color:scene.color});
+      if(!scene.hit&&scene.elapsed>=scene.duration*scene.impact){
+        scene.hit=true;performUltimate(this,scene.skin,{origin:scene.origin,facing:scene.facing,damage:scene.damage,color:scene.color});
         this.burst(scene.origin.x,scene.origin.y,scene.color,35);this.shake=5;this.emit('special-impact');
       }
       if(scene.hit)tickWeaponMoves(this,dt);
@@ -62,6 +63,7 @@ export class Adventure{
     }
     if(this.mode!=='playing')return;
     const p=this.player;
+    this.memoryClock=(this.memoryClock??0)+dt;if(this.memoryClock>=.2){this.memoryClock=0;this.memoryTrail=[...(this.memoryTrail??[]).slice(-19),{x:p.x,y:p.y,hp:p.hp}];}
     tickWeaponMoves(this,dt);
     for(const k of ['attackTime','attackCd','parryTime','parryCd','riposteTime','specialCd','lightningCd','sweepCd','guardCd','chargeCd','guardTime','mendCd','cycloneCd','starsCd','powerCd','dodgeTime','dodgeCd','invulnerable','hurtFlash'])p[k]=Math.max(0,p[k]-dt);
     let dx=(input.right?1:0)-(input.left?1:0),dy=(input.down?1:0)-(input.up?1:0);
@@ -175,7 +177,7 @@ export class Adventure{
     const skin=ultimateKey(p),theme=ULTIMATES[skin];
     p.ultimateCharge=0;p.attackTime=0;p.parryTime=0;p.dodgeTime=0;p.attackHit=true;
     const move=weaponKit(p).ultimate;
-    this.specialScene={elapsed:0,duration:reducedMotion?.65:2.6,hit:false,reducedMotion,skin,theme,move,origin:{x:p.x,y:p.y},facing:{...p.facing},color:weaponColor(p),damage:p.scrapKing?999:Math.round(this.attackDamage*move.scale)};
+    this.specialScene={targets:this.area.enemies.filter(e=>!e.dead&&!e.dormant&&distance(e,this.player)<=260).sort((a,b)=>distance(a,this.player)-distance(b,this.player)).map(e=>({x:e.x,y:e.y})),history:(this.memoryTrail??[]).map(p=>({...p})),elapsed:0,duration:reducedMotion?.65:ULTIMATE_PATTERNS[skin].duration,impact:ULTIMATE_PATTERNS[skin].impact,hit:false,reducedMotion,skin,theme,move,origin:{x:p.x,y:p.y},facing:{...p.facing},color:weaponColor(p),damage:p.scrapKing?999:Math.round(this.attackDamage*move.scale)};
     this.mode='special';this.emit('special-start',{theme,skin});return true;
   }
   parry(){const p=this.player;if(this.mode!=='playing'||p.parryCd||p.dodgeTime)return false;p.attackTime=0;p.attackHit=true;p.parryTime=.2;p.parryCd=.7;p.parryFacing={...p.facing};this.emit('parry-start');return true;}

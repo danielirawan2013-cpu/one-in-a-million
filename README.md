@@ -112,3 +112,33 @@ Boss impacts now throw sparks, Rowan’s attacks draw readable arcs and lanes, a
 
 ## Boss effects update (v0.5.1)
 Boss fights add themed arrival pulses, converging melee and lightning charge sparks, directional strike trails, an armour-break burst at half health, and larger defeat shockwaves. Frost shards, flames, moon crescents, memory pages, chains, leaves, silk threads, metal debris and lightning match each boss. Reduced-motion mode uses fewer fixed fragments and removes travelling trails. Effects are temporary and capped; damage, loot, story gates and saves keep their existing behavior.
+
+## Low health and distinct ultimates (v0.6.0)
+At **25 HP or less**, a persistent warning and red viewport border appear during play. Press **H** or click **Use potion** to heal. With no potions, the warning advises retreating. It clears after healing above 25 HP and never flashes.
+
+Hold **U** or land hits/parries to charge, then press **V**. All 22 weapons now have separate attack sequences, cutscene artwork, windup timing and aiming behavior. Hover the ultimate button when ready to read its move description. Legacy equipment and saves carry forward.
+
+| Weapon | Ultimate behavior |
+| --- | --- |
+| Battered sword | Three expanding shockwaves |
+| Iron shortsword | Piercing thrust and crossing cuts |
+| Classic Dawnblade | Restoring protective rings |
+| Dawnblade | Sustained solar cannon |
+| Moonfang | Twin returning crescent blades |
+| Emberfang | A line of burning eruptions |
+| Frostbite | Freeze nova and eight ice lances |
+| Thornheart | Root traps at enemy positions |
+| Voidbreaker | Gravity well, then an implosion |
+| Stormsplitter | Chained lightning and a final shock |
+| Dragonfang | Three widening dragon breaths |
+| Bloodmoon | Three sweeping cuts that steal health |
+| Starfall | Nine delayed meteors |
+| Ghostveil | Four phantom swordsmen attacking marked enemies |
+| Thunderwake | Ground slam and targeted thunderbolts |
+| Scrap King | One arena-wide royal execution |
+| Rimecrown | Frozen dragon teeth and blizzard breath |
+| Oathbreaker | Binding chains, then delayed judgements |
+| Solstice | Phoenix wings and returned health |
+| Tidemirror | Two closing tidal walls and a central burst |
+| Recollection | Recover recent lost health and replay attacks along your path |
+| Heavensfall | Descending columns and crossing heavenly blades |

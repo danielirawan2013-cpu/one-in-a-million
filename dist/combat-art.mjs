@@ -1,3 +1,4 @@
+import {drawUniqueUltimate} from './ultimate-art.mjs?v=0.6.0';
 // Canvas-native artwork: integer scanlines keep every contour in real pixels.
 const rect=(c,color,x,y,w,h)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
 function poly(c,color,points){
@@ -82,51 +83,5 @@ export function drawMoveEffect(c,e,{reducedMotion=false}={}){
 }
 
 export function drawUltimateSpectacle(c,game,{reducedMotion=false}={}){
-  const scene=game.specialScene;if(!scene)return;
-  const p=scene.origin,color=scene.color,phase=Math.min(1,scene.elapsed/(scene.duration*.68)),release=scene.hit,anim=reducedMotion?1:phase;
-  const x=p.x,y=p.y-18,key=scene.skin;
-  c.save();c.globalAlpha=release?.65:.85;
-  if(key==='dawnblade'||key==='classicdawn'){
-    const sy=y-30-anim*45;for(let i=0;i<10;i++){const a=i*Math.PI/5;line(c,color,x+Math.cos(a)*20,sy+Math.sin(a)*20,x+Math.cos(a)*(30+anim*22),sy+Math.sin(a)*(30+anim*22),3);}star(c,'#fff4b8',x,sy,18);
-    if(release)poly(c,color,[[x-22,y],[x+22,y],[x+scene.facing.x*250+22,y+scene.facing.y*250],[x+scene.facing.x*250-22,y+scene.facing.y*250]]);
-  }else if(key==='moonfang'){
-    const r=30+anim*35;for(let i=0;i<3;i++){const a=i*Math.PI*2/3+(reducedMotion?0:scene.elapsed);crescent(c,color,x+Math.cos(a)*r,y+Math.sin(a)*r*.6,21,a);}
-    crescent(c,'#ecfaff',x,y-55,28,-.7);
-  }else if(key==='emberfang'){
-    for(let i=-2;i<=2;i++)flame(c,color,x+i*25,y+20,20+anim*(65-Math.abs(i)*15));
-    if(release)for(let i=0;i<5;i++)flame(c,color,x+scene.facing.x*(35+i*30),y+scene.facing.y*(35+i*30),75);
-  }else if(key==='frostbite'){
-    for(let i=-3;i<=3;i++)crystal(c,color,x+i*17,y+22,20+anim*(85-Math.abs(i)*17));
-    line(c,'#f0ffff',x-60,y+20,x+60,y+20,2);
-  }else if(key==='thornheart'){
-    for(const side of [-1,1]){let prev=[x+side*10,y+30];for(let i=0;i<25;i++){const h=i*4*anim,xx=x+side*(16+Math.sin(i*.4)*20),yy=y+30-h;line(c,color,...prev,xx,yy,3);if(i%4===0)poly(c,color,[[xx,yy],[xx+side*12,yy-9],[xx+side*9,yy+2]]);prev=[xx,yy];}}
-  }else if(key==='voidbreaker'){
-    const r=15+anim*45;c.fillStyle='#15192c';c.beginPath();c.ellipse(x,y,r,r*.6,0,0,Math.PI*2);c.fill();
-    for(let i=0;i<6;i++)crescent(c,color,x,y,r+i*4,(reducedMotion?0:-scene.elapsed*2)+i*.7);
-    if(release)bolt(c,'#ecdfff',x-100,y,x+100,y,3);
-  }else if(key==='stormsplitter'||key==='thunderhammer'){
-    if(key==='thunderhammer'){poly(c,color,[[x-30,y-90],[x+30,y-90],[x+30,y-61],[x-30,y-61]]);rect(c,'#e3fff4',x-24,y-86,48,6);rect(c,color,x-4,y-61,8,55);}
-    for(let i=-2;i<=2;i++)bolt(c,i%2?color:'#ecfff5',x+i*34,y-95,x+i*18,y+15,2);
-    if(release)for(let i=0;i<8;i++){const a=i*Math.PI/4;bolt(c,color,x,y,x+Math.cos(a)*110,y+Math.sin(a)*70,2);}
-  }else if(key==='dragonfang'){
-    c.globalAlpha=.55;drawLightningDragon(c,{x,y:y-15},0,{reducedMotion:true,apparition:true});c.globalAlpha=.9;
-    for(let i=0;i<4;i++)flame(c,color,x+scene.facing.x*(30+i*25),y+scene.facing.y*(30+i*25),20+anim*40);
-  }else if(key==='bloodmoon'){
-    crescent(c,'#ec738b',x,y-55,30,-.5);c.fillStyle='#672c46';c.beginPath();c.arc(x,y-55,22,0,Math.PI*2);c.fill();
-    for(let i=0;i<3;i++)crescent(c,color,x,y,25+anim*35+i*8,i*2.1);
-  }else if(key==='starfall'){
-    for(let i=0;i<7;i++){const xx=x-84+i*28,yy=y-100+(reducedMotion?i%3*13:(scene.elapsed*55+i*19)%100);line(c,'#8069a1',xx-16,yy-35,xx,yy,3);star(c,color,xx,yy,7);}
-    star(c,'#f0e2ff',x,y-55,18*anim+5);
-  }else if(key==='ghostveil'){
-    for(let i=0;i<4;i++){const a=i*Math.PI/2+(reducedMotion?0:scene.elapsed*.6),xx=x+Math.cos(a)*(35+anim*30),yy=y+Math.sin(a)*25;c.globalAlpha=.3+i*.12;rect(c,color,xx-4,yy-23,8,8);poly(c,color,[[xx-7,yy-13],[xx+7,yy-13],[xx+10,yy+4],[xx+3,yy],[xx,yy+4],[xx-4,yy],[xx-10,yy+4]]);line(c,'#ecfff3',xx+8,yy-12,xx+22,yy-32,2);}
-  }else if(key==='scrap-king'){
-    for(let i=0;i<18;i++){const a=i*Math.PI/9,r=20+(1-anim)*75;rect(c,i%2?color:'#a7c2c5',x+Math.cos(a)*r,y+Math.sin(a)*r,4+i%4,6);}
-    poly(c,'#f3cc8b',[[x-22,y-55],[x-28,y-76],[x-10,y-65],[x,y-84],[x+10,y-65],[x+28,y-76],[x+22,y-55]]);
-  }else if(key==='ironshort'){
-    for(let i=-1;i<=1;i++)line(c,color,x+i*20,y+15,x+i*20,y-85,5);line(c,'#f3fff2',x-40,y-38,x+40,y-38,3);
-  }else{
-    // The starter sword awakens Pip's small silhouette, rather than an element.
-    for(let i=0;i<7;i++){const a=i*Math.PI/3.5;star(c,color,x+Math.cos(a)*(25+anim*35),y+Math.sin(a)*(25+anim*35),4);}
-    star(c,'#f4e9ba',x,y-35,10);
-  }c.restore();
+  drawUniqueUltimate(c,game,{reducedMotion,drawDragon:drawLightningDragon});
 }

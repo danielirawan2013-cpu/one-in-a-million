@@ -1,7 +1,8 @@
-import {SWORDS} from './swords.mjs?v=0.5.1';
-import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.5.1';
-import {isSolid} from './world.mjs?v=0.5.1';
-import {ultimateKey} from './ultimates.mjs?v=0.5.1';
+import {buildUltimateSequence} from './ultimate-patterns.mjs?v=0.6.0';
+import {SWORDS} from './swords.mjs?v=0.6.0';
+import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.6.0';
+import {isSolid} from './world.mjs?v=0.6.0';
+import {ultimateKey} from './ultimates.mjs?v=0.6.0';
 
 export const ABILITY_KEYS=['sweep','guard','charge','mend','cyclone','stars'];
 export const ABILITY_LEVELS={sweep:1,guard:2,charge:3,mend:1,cyclone:2,stars:3};
@@ -19,20 +20,20 @@ export const WEAPON_KITS={
   recollection:kit({reach:38,phase:.1,cooldown:.38},['Remembered Cut','Keeper’s Page','Unwritten Step','Homeward Memory','Echoes of Home','Lost Chapters'],[line({range:145,width:18,repeat:3,delay:.25}),ward({duration:2,invulnerable:.5,charge:15}),dash({travel:110,trail:true}),heal({heal:20,charge:20}),move('','phantoms',{range:150,radius:35,repeat:3,scale:.9}),field({radius:70,offset:60,slow:2,duration:4,pulses:5})],move('Every Life Remembered','phantoms',{range:240,radius:60,repeat:7,scale:1.5,invulnerable:1})),
   heavensfall:kit({reach:49,halfAngle:.7,knock:100,cooldown:.6},['Crown Sever','Free Sky','Sovereign Fall','A Door Home','Broken Throne','Heaven’s Answer'],[arc({radius:125,halfAngle:.5,scale:2.2}),ward({duration:4,aura:'shock'}),dash({travel:65,radius:75,knock:200,scale:3}),heal({heal:25,guard:2}),ring({radius:135,knock:250,shock:.6}),line({range:250,width:20,shock:1,scale:3})],move('Heaven Without Chains','line',{range:360,width:55,scale:6,shock:1.5,knock:250})),
   battered:kit({},['Sweep','Guard','Rush','Mending Light','Cyclone','Starcall'],[arc(),ward(),dash({scale:2}),heal(),ring({radius:52,scale:1.3}),ring({radius:100,scale:2})],move('Underdog Awakening','ring',{radius:150,scale:3})),
-  ironshort:kit({reach:39,halfAngle:.35,cooldown:.4},['Iron Thrust','Steel Stance','Shieldbreaker','Second Wind','Crosscut','Piercing Verdict'],[line({range:85}),ward({duration:4}),dash({travel:45,scale:2.6}),heal({heal:15,guard:2}),arc({radius:45,scale:2.2}),line({range:180,scale:3})],move('Ironheart Verdict','line',{range:240,width:24,scale:5})),
-  classicdawn:kit({reach:38,halfAngle:1.2},['First Light','Warm Shelter','Bright Advance','Kindle Heart','Sunwheel','Sunrise'],[arc({heal:3}),ward({heal:10}),dash({travel:65}),heal({heal:25}),ring({radius:60}),line({range:165,width:30})],move('First-Light Reckoning','ring',{radius:150,scale:3,heal:30})),
-  dawnblade:kit({reach:38,heal:1},['Sunbeam','Solar Shelter','Radiant Charge','Daybreak Renewal','Halo Flare','Dawn Pillar'],[line({range:155,width:12}),ward({heal:12}),dash({travel:75,heal:5}),heal({heal:28}),ring({radius:72}),field({radius:42,offset:70,pulses:3,scale:1.1})],move('Daybreak Judgement','line',{range:260,width:42,scale:4.2,heal:25})),
-  moonfang:kit({cooldown:.34,duration:.3,windup:.06,hitAt:.1,activeUntil:.16,reach:39,halfAngle:.45},['Crescent Cast','Lunar Veil','Moonstep','Moonwell','Orbiting Moons','Twin Eclipse'],[line({range:145,width:28,delay:.18}),ward({invulnerable:.45}),dash({travel:90,invulnerable:.3}),heal({heal:16,invulnerable:.5}),ring({radius:85,inner:30,scale:2}),line({range:185,width:30,repeat:2})],move('Lunar Judgement','line',{range:260,width:45,scale:2,repeat:3,delay:.2})),
-  emberfang:kit({burn:2,cooldown:.52},['Flame Fan','Cinder Armour','Blazing Trail','Stoke the Fire','Firebed','Volcanic Eruption'],[arc({burn:3,radius:75}),ward({aura:'burn'}),dash({travel:70,trail:true,burn:3}),heal({heal:12,field:true,burn:2}),field({radius:62,burn:2}),field({radius:38,offset:85,pulses:5,burn:3,scale:.8})],move('Inferno Judgement','eruption',{radius:38,scale:1.2,burn:4,pulses:5})),
-  frostbite:kit({slow:2,reach:36},['Ice Lance','Frozen Shell','Frostslide','Snowmelt','Permafrost','Glacier Prison'],[line({range:150,freeze:1}),ward({aura:'slow',duration:4}),dash({travel:75,trail:true,slow:3}),heal({heal:20,slow:2,field:true}),field({radius:75,slow:3}),ring({radius:100,freeze:1.6,scale:1.3})],move('Glacial Judgement','ring',{radius:180,freeze:3,scale:2.5})),
-  thornheart:kit({root:.45,halfAngle:1.2},['Vine Lash','Briar Guard','Rootpath','Bloom','Briar Garden','Ancient Roots'],[line({range:105,width:22,root:1.5}),ward({aura:'root'}),dash({travel:50,root:2,radius:65}),heal({heal:25,field:true,root:1}),field({radius:80,root:1}),ring({radius:120,root:2,scale:1.5})],move('Briar Judgement','field',{radius:160,duration:5,pulses:6,root:1.2,scale:.7})),
-  voidbreaker:kit({reach:43,halfAngle:.5,cooldown:.6},['Rift Cut','Null Barrier','Voidstep','Consume Shadow','Gravity Well','Event Horizon'],[line({range:170,width:10,scale:2.3}),ward({invulnerable:.6,duration:2}),dash({travel:100,scale:2.3}),ring({radius:65,drain:.3,scale:1}),field({radius:110,pull:65}),ring({radius:130,scale:2.5,pull:50})],move('Void Judgement','field',{radius:190,duration:3,pulses:5,pull:100,scale:.8})),
-  stormsplitter:kit({chain:1,cooldown:.4},['Chain Spark','Static Shield','Boltstep','Recharge','Thunder Ring','Sky Spear'],[chain({jumps:4}),ward({aura:'shock'}),dash({travel:85,scale:1.3,shock:.5}),heal({heal:10,charge:25}),ring({radius:90,shock:.7}),line({range:210,width:14,shock:1,scale:2.5})],move('Storm Judgement','chain',{range:230,jumps:8,scale:3.5,shock:1.4})),
-  dragonfang:kit({reach:42,halfAngle:1.15,knock:120,cooldown:.58},['Dragon Breath','Scaleguard','Fang Rush','Dragon Heart','Wingbeat','Elder Roar'],[arc({radius:115,halfAngle:.5,burn:2}),ward({duration:5}),dash({travel:80,scale:2.7,knock:180}),heal({heal:18,guard:3}),ring({radius:95,knock:220}),arc({radius:165,halfAngle:1,scale:3,knock:160})],move('Dragon Judgement','arc',{radius:240,halfAngle:.6,scale:4.5,burn:4,knock:240})),
-  bloodmoon:kit({drain:.12,cooldown:.43},['Crimson Fang','Blood Pact','Red Hunt','Sanguine Feast','Scarlet Circle','Blood Reaping'],[arc({drain:.25,radius:65}),ward({duration:2,drain:.2,aura:'drain'}),dash({travel:70,drain:.2}),ring({radius:75,drain:.5,scale:.8}),ring({radius:80,drain:.15,scale:2}),line({range:140,width:35,drain:.3,scale:2.5})],move('Crimson Judgement','ring',{radius:180,scale:3.5,drain:.35})),
-  starfall:kit({reach:38,star:true,cooldown:.55},['Comet Lance','Astral Ward','Comet Ride','Starlight Rest','Constellation','Meteor Rain'],[line({range:180,width:12,delay:.25,scale:2}),ward({charge:15}),dash({travel:95,trail:true}),heal({heal:15,charge:20}),field({radius:95,offset:40,pulses:3,scale:.7}),move('','meteors',{radius:32,pulses:5,range:160,scale:1.1})],move('Celestial Judgement','meteors',{radius:45,pulses:9,range:240,scale:1.2})),
-  ghostveil:kit({reach:37,halfAngle:.45,phase:.08,cooldown:.35},['Wisp Shot','Ghost Form','Phantom Step','Soul Return','Haunting','Spectral Company'],[line({range:145,width:15}),ward({duration:1.5,invulnerable:1}),dash({travel:105,invulnerable:.45}),heal({heal:12,invulnerable:.7}),field({radius:95,slow:2,scale:.6}),line({range:180,width:22,repeat:3,delay:.2})],move('Phantom Judgement','phantoms',{range:200,scale:1.2,repeat:4,invulnerable:1.2})),
-  thunderhammer:kit({reach:36,halfAngle:1.4,shock:.35,cooldown:.72,duration:.6,windup:.18,hitAt:.26,activeUntil:.34},['Thunderclap','Storm Shelter','Hammerfall','Rain Renewal','Charged Ground','Lightning Barrage'],[ring({radius:65,shock:.5}),ward({aura:'shock',duration:4}),dash({travel:40,radius:70,shock:.8,scale:2.3}),heal({heal:24}),field({radius:85,shock:.3}),move('','meteors',{radius:35,pulses:4,range:160,shock:.6,scale:1.2})],move('Tempest Judgement','eruption',{radius:65,pulses:4,scale:1.4,shock:1})),
+  ironshort:kit({reach:39,halfAngle:.35,cooldown:.4},['Iron Thrust','Steel Stance','Shieldbreaker','Second Wind','Crosscut','Piercing Verdict'],[line({range:85}),ward({duration:4}),dash({travel:45,scale:2.6}),heal({heal:15,guard:2}),arc({radius:45,scale:2.2}),line({range:180,scale:3})],move('Ironheart Lunge','line',{range:240,width:24,scale:5})),
+  classicdawn:kit({reach:38,halfAngle:1.2},['First Light','Warm Shelter','Bright Advance','Kindle Heart','Sunwheel','Sunrise'],[arc({heal:3}),ward({heal:10}),dash({travel:65}),heal({heal:25}),ring({radius:60}),line({range:165,width:30})],move('Guardian’s Sunrise','ring',{radius:150,scale:3,heal:30})),
+  dawnblade:kit({reach:38,heal:1},['Sunbeam','Solar Shelter','Radiant Charge','Daybreak Renewal','Halo Flare','Dawn Pillar'],[line({range:155,width:12}),ward({heal:12}),dash({travel:75,heal:5}),heal({heal:28}),ring({radius:72}),field({radius:42,offset:70,pulses:3,scale:1.1})],move('Daybreak Cannon','line',{range:260,width:42,scale:4.2,heal:25})),
+  moonfang:kit({cooldown:.34,duration:.3,windup:.06,hitAt:.1,activeUntil:.16,reach:39,halfAngle:.45},['Crescent Cast','Lunar Veil','Moonstep','Moonwell','Orbiting Moons','Twin Eclipse'],[line({range:145,width:28,delay:.18}),ward({invulnerable:.45}),dash({travel:90,invulnerable:.3}),heal({heal:16,invulnerable:.5}),ring({radius:85,inner:30,scale:2}),line({range:185,width:30,repeat:2})],move('Crescent Return','line',{range:260,width:45,scale:2,repeat:3,delay:.2})),
+  emberfang:kit({burn:2,cooldown:.52},['Flame Fan','Cinder Armour','Blazing Trail','Stoke the Fire','Firebed','Volcanic Eruption'],[arc({burn:3,radius:75}),ward({aura:'burn'}),dash({travel:70,trail:true,burn:3}),heal({heal:12,field:true,burn:2}),field({radius:62,burn:2}),field({radius:38,offset:85,pulses:5,burn:3,scale:.8})],move('Cinder Faultline','eruption',{radius:38,scale:1.2,burn:4,pulses:5})),
+  frostbite:kit({slow:2,reach:36},['Ice Lance','Frozen Shell','Frostslide','Snowmelt','Permafrost','Glacier Prison'],[line({range:150,freeze:1}),ward({aura:'slow',duration:4}),dash({travel:75,trail:true,slow:3}),heal({heal:20,slow:2,field:true}),field({radius:75,slow:3}),ring({radius:100,freeze:1.6,scale:1.3})],move('Eightfold Glacier','ring',{radius:180,freeze:3,scale:2.5})),
+  thornheart:kit({root:.45,halfAngle:1.2},['Vine Lash','Briar Guard','Rootpath','Bloom','Briar Garden','Ancient Roots'],[line({range:105,width:22,root:1.5}),ward({aura:'root'}),dash({travel:50,root:2,radius:65}),heal({heal:25,field:true,root:1}),field({radius:80,root:1}),ring({radius:120,root:2,scale:1.5})],move('Roots of the Guardian','field',{radius:160,duration:5,pulses:6,root:1.2,scale:.7})),
+  voidbreaker:kit({reach:43,halfAngle:.5,cooldown:.6},['Rift Cut','Null Barrier','Voidstep','Consume Shadow','Gravity Well','Event Horizon'],[line({range:170,width:10,scale:2.3}),ward({invulnerable:.6,duration:2}),dash({travel:100,scale:2.3}),ring({radius:65,drain:.3,scale:1}),field({radius:110,pull:65}),ring({radius:130,scale:2.5,pull:50})],move('Event Horizon','field',{radius:190,duration:3,pulses:5,pull:100,scale:.8})),
+  stormsplitter:kit({chain:1,cooldown:.4},['Chain Spark','Static Shield','Boltstep','Recharge','Thunder Ring','Sky Spear'],[chain({jumps:4}),ward({aura:'shock'}),dash({travel:85,scale:1.3,shock:.5}),heal({heal:10,charge:25}),ring({radius:90,shock:.7}),line({range:210,width:14,shock:1,scale:2.5})],move('Chainstorm','chain',{range:230,jumps:8,scale:3.5,shock:1.4})),
+  dragonfang:kit({reach:42,halfAngle:1.15,knock:120,cooldown:.58},['Dragon Breath','Scaleguard','Fang Rush','Dragon Heart','Wingbeat','Elder Roar'],[arc({radius:115,halfAngle:.5,burn:2}),ward({duration:5}),dash({travel:80,scale:2.7,knock:180}),heal({heal:18,guard:3}),ring({radius:95,knock:220}),arc({radius:165,halfAngle:1,scale:3,knock:160})],move('Elder Dragon’s Breath','arc',{radius:240,halfAngle:.6,scale:4.5,burn:4,knock:240})),
+  bloodmoon:kit({drain:.12,cooldown:.43},['Crimson Fang','Blood Pact','Red Hunt','Sanguine Feast','Scarlet Circle','Blood Reaping'],[arc({drain:.25,radius:65}),ward({duration:2,drain:.2,aura:'drain'}),dash({travel:70,drain:.2}),ring({radius:75,drain:.5,scale:.8}),ring({radius:80,drain:.15,scale:2}),line({range:140,width:35,drain:.3,scale:2.5})],move('Crimson Harvest','ring',{radius:180,scale:3.5,drain:.35})),
+  starfall:kit({reach:38,star:true,cooldown:.55},['Comet Lance','Astral Ward','Comet Ride','Starlight Rest','Constellation','Meteor Rain'],[line({range:180,width:12,delay:.25,scale:2}),ward({charge:15}),dash({travel:95,trail:true}),heal({heal:15,charge:20}),field({radius:95,offset:40,pulses:3,scale:.7}),move('','meteors',{radius:32,pulses:5,range:160,scale:1.1})],move('Meteor Shower','meteors',{radius:45,pulses:9,range:240,scale:1.2})),
+  ghostveil:kit({reach:37,halfAngle:.45,phase:.08,cooldown:.35},['Wisp Shot','Ghost Form','Phantom Step','Soul Return','Haunting','Spectral Company'],[line({range:145,width:15}),ward({duration:1.5,invulnerable:1}),dash({travel:105,invulnerable:.45}),heal({heal:12,invulnerable:.7}),field({radius:95,slow:2,scale:.6}),line({range:180,width:22,repeat:3,delay:.2})],move('Phantom Company','phantoms',{range:200,scale:1.2,repeat:4,invulnerable:1.2})),
+  thunderhammer:kit({reach:36,halfAngle:1.4,shock:.35,cooldown:.72,duration:.6,windup:.18,hitAt:.26,activeUntil:.34},['Thunderclap','Storm Shelter','Hammerfall','Rain Renewal','Charged Ground','Lightning Barrage'],[ring({radius:65,shock:.5}),ward({aura:'shock',duration:4}),dash({travel:40,radius:70,shock:.8,scale:2.3}),heal({heal:24}),field({radius:85,shock:.3}),move('','meteors',{radius:35,pulses:4,range:160,shock:.6,scale:1.2})],move('Skybreak Smash','eruption',{radius:65,pulses:4,scale:1.4,shock:1})),
   'scrap-king':kit({reach:44,halfAngle:1.3},['Scrap Cleave','Iron Throne','Royal Advance','Reforge','Scrap Tornado','Royal Decree'],[arc({radius:90}),ward({duration:6}),dash({travel:90}),heal({heal:40}),ring({radius:130}),line({range:240,width:35})],move('King’s Verdict','ring',{radius:1000,scale:1}))
 };
 export function weaponKit(p){return WEAPON_KITS[ultimateKey(p)];}
@@ -56,7 +57,7 @@ function select(g,spec,origin,facing){
   });
 }
 function visual(g,spec,origin,facing,color,life=.65){
-  const key=ultimateKey(g.player);
+  const key=spec.ultimateStyle??ultimateKey(g.player);
   g.effects.push({kind:'weapon-move',x:origin.x,y:origin.y,face:{...facing},style:key,shape:spec.kind,r:spec.radius,range:spec.range??spec.radius,width:spec.width??20,color,life,maxLife:life});
 }
 export function performMove(g,spec,{origin={x:g.player.x,y:g.player.y},facing={...g.player.facing},damage=Math.round(g.attackDamage*spec.scale),color=weaponColor(g.player),delayed=false}={}){
@@ -78,7 +79,7 @@ export function performMove(g,spec,{origin={x:g.player.x,y:g.player.y},facing={.
       else center=target?{x:target.x,y:target.y}:{x:origin.x+facing.x*60+Math.cos(i*2.4)*35,y:origin.y+facing.y*60+Math.sin(i*2.4)*35};
       const strike={...spec,kind:spec.kind==='phantoms'?'arc':'ring',radius:spec.radius??46,halfAngle:Math.PI,heal:0,invulnerable:0};
       schedule(g,strike,center,facing,damage,color,.3+i*.16);
-      g.effects.push({kind:'strike-warning',style:ultimateKey(p),x:center.x,y:center.y,r:strike.radius,color,life:.3+i*.16,maxLife:.3+i*.16});
+      g.effects.push({kind:'strike-warning',style:spec.ultimateStyle??ultimateKey(p),x:center.x,y:center.y,r:strike.radius,color,life:.3+i*.16,maxLife:.3+i*.16});
     }return;
   }
   if(spec.kind==='chain'){
@@ -106,6 +107,16 @@ export function tickWeaponMoves(g,dt){
   for(const e of living(g)){
     for(const key of ['slow','freeze','root','shock'])e[key]=Math.max(0,(e[key]??0)-dt);
     if(e.burn){e.burn.time-=dt;e.burn.next-=dt;if(e.burn.time<=0)e.burn=null;else if(e.burn.next<=0){e.burn.next=.5;g.damageEnemy(e,e.burn.damage,{charge:false});}}
+  }
+}
+export function performUltimate(g,skin,{origin,facing,damage,color}){
+  const actions=buildUltimateSequence(skin,{origin,facing,targets:living(g),history:g.memoryTrail??[]});
+  for(const action of actions){
+    if(action.restoreHealth!==undefined){g.player.hp=Math.min(100,Math.max(g.player.hp,action.restoreHealth));continue;}
+    const spec={...action.spec,ultimateStyle:skin,chargeHit:false};
+    const power=Math.max(1,Math.round(damage*action.power));
+    if(action.delay){schedule(g,spec,action.origin,action.facing,power,color,action.delay);g.effects.push({kind:'strike-warning',style:skin,x:action.origin.x,y:action.origin.y,r:spec.radius??24,color,life:action.delay,maxLife:action.delay});}
+    else performMove(g,spec,{origin:action.origin,facing:action.facing,damage:power,color});
   }
 }
 export function basicWeaponHit(g,enemy,damage){

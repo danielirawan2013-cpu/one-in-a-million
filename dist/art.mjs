@@ -1,12 +1,13 @@
-import {drawBossCharge,drawBossVFX} from './boss-vfx.mjs?v=0.6.0';
-import {drawOathFighter,drawOathEffect} from './betrayal-art.mjs?v=0.6.0';
-import {paintRegionGround} from './region-art.mjs?v=0.6.0';
-import {drawBoss,drawBossStrike,BOSS_DESIGNS} from './boss-art.mjs?v=0.6.0';
-import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.6.0';
-import {weaponSwing} from './moves.mjs?v=0.6.0';
-import {SWORDS} from './swords.mjs?v=0.6.0';
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.6.0';
-import {SWORD_SWING,clamp} from './core.mjs?v=0.6.0';
+import {drawShadow,drawShadowEffect} from './shadow-art.mjs?v=0.7.0';
+import {drawBossCharge,drawBossVFX} from './boss-vfx.mjs?v=0.7.0';
+import {drawOathFighter,drawOathEffect} from './betrayal-art.mjs?v=0.7.0';
+import {paintRegionGround} from './region-art.mjs?v=0.7.0';
+import {drawBoss,drawBossStrike,BOSS_DESIGNS} from './boss-art.mjs?v=0.7.0';
+import {drawLightningDragon,drawMoveEffect,drawUltimateSpectacle} from './combat-art.mjs?v=0.7.0';
+import {weaponSwing} from './moves.mjs?v=0.7.0';
+import {SWORDS} from './swords.mjs?v=0.7.0';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,noise} from './world.mjs?v=0.7.0';
+import {SWORD_SWING,clamp} from './core.mjs?v=0.7.0';
 const P={'.':null,o:'#252830',h:'#634337',H:'#8d6550',s:'#e9bc92',S:'#f3d1a0',e:'#202a2c',a:'#e8debe',A:'#c4b48f',c:'#517a78',C:'#6e9b91',b:'#493e3e',B:'#695246',l:'#b9c3c0',L:'#e0dfce',g:'#8b8e99',G:'#5b6072',r:'#997150',R:'#c7a46b',v:'#a799c9',V:'#716a97',y:'#f1c674',Y:'#e9e0af'};
 const sprites={
   pip:[
@@ -47,7 +48,7 @@ const sprites={
   ]
 };
 const swordImages=new Map();
-function swordImage(id){if(!swordImages.has(id)){const image=new Image();image.src=new URL('./assets/'+id+'.png',import.meta.url).href;swordImages.set(id,image);}return swordImages.get(id);}
+function swordImage(id){if(!swordImages.has(id)){const image=new Image();image.src=new URL('./assets/'+(SWORDS[id]?.asset??id+'.png'),import.meta.url).href;swordImages.set(id,image);}return swordImages.get(id);}
 function skinBlade(c,id,x,y,angle,{hand=true,scale=.5}={}){const image=swordImage(id);if(!image.complete||!image.naturalWidth){blade(c,x,y,angle,{hand});return;}c.save();c.translate(Math.round(x),Math.round(y));c.rotate(angle+Math.PI/2);c.imageSmoothingEnabled=false;c.drawImage(image,-16*scale,-39*scale,32*scale,48*scale);c.restore();if(hand)block(c,'#e9bc92',x-1,y-1,3,3);}
 export function sprite(ctx,kind,x,y,{scale=1,flash=false,flip=false,step=0}={}){
   const rows=sprites[kind]||sprites.guard,w=rows[0].length,h=rows.length;
@@ -198,7 +199,7 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     for(let i=0;i<8;i++){const x=61+i*12,y=247+((i*19)%124);block(ctx,'#80b0a5',x+Math.sin(game.time+i)*3,y,6,1);}
   }
   for(const fx of game.effects)if(fx.kind==='divine-strike'){divineZone(ctx,{...fx,kind:fx.shape},fx.color,true);const t=1-fx.life/fx.maxLife;for(let i=0;i<12;i++){const a=i*Math.PI/6,r=(fx.r??35)*(1+t*.5);pixelLine(ctx,fx.color,fx.x+Math.cos(a)*r*.5,fx.y+Math.sin(a)*r*.5,fx.x+Math.cos(a)*r,fx.y+Math.sin(a)*r,2);block(ctx,'#fff0d0',fx.x+Math.cos(a)*r,fx.y+Math.sin(a)*r-18*(1-t),2,4);}}
-  const entities=[...game.area.objects.map(o=>({...o,sortY:['house','counter','shelf'].includes(o.kind)?o.y+o.h:o.y,draw:()=>drawObject(ctx,o,game.time)})),...game.area.chests.map(o=>({...o,sortY:o.y,draw:()=>drawChest(ctx,o,game.time)})),...game.area.npcs.map(n=>({...n,sortY:n.y,draw:()=>{
+  const entities=[...(game.specialScene?.skin==='shadowfangs'?[]:game.shadowArmy??[]).map(s=>({...s,sortY:s.y,draw:()=>drawShadow(ctx,s,game.time,{reducedMotion})})),...game.area.objects.map(o=>({...o,sortY:['house','counter','shelf'].includes(o.kind)?o.y+o.h:o.y,draw:()=>drawObject(ctx,o,game.time)})),...game.area.chests.map(o=>({...o,sortY:o.y,draw:()=>drawChest(ctx,o,game.time)})),...game.area.npcs.map(n=>({...n,sortY:n.y,draw:()=>{
     if(n.kind==='invisible')return;
     shadow(ctx,n.x,n.y,n.kind==='dragon'?48:20,5);sprite(ctx,n.kind,n.x,n.y,{scale:n.kind==='dragon'?1.6:1});
     if(n.id==='uncle'&&!game.defeated.has('warden')){block(ctx,'#69717e',n.x-14,n.y-25,28,2);for(let i=0;i<5;i++)block(ctx,'#848b91',n.x-12+i*6,n.y-25,2,28);}
@@ -232,7 +233,7 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     const strike=p.attackTime&&elapsed>=swing.windup&&elapsed<swing.activeUntil;
     const lean=strike?1:0,bx=p.x+face.x*lean,by=p.y+face.y*lean;
     const skin=p.scrapKing?'scrap-king':p.weaponSkin;
-    const drawBlade=(x,y,a,options={})=>skin?skinBlade(ctx,skin,x,y,a,{...options,scale:p.scrapKing?.65:.5}):blade(ctx,x,y,a,options);
+    const drawBlade=(x,y,a,options={})=>{if(skin==='shadowfangs'){skinBlade(ctx,skin,x,y,a,{...options,scale:.56});skinBlade(ctx,skin,x-face.y*9,y+face.x*9,a-.45,{...options,scale:.5});}else if(skin)skinBlade(ctx,skin,x,y,a,{...options,scale:p.scrapKing?.65:.5});else blade(ctx,x,y,a,options);};
     const drawSword=()=>{
       if(p.parryTime){drawBlade(bx+face.x*7,by-8+face.y*7,angle+Math.PI/2);return;}
       if(p.attackTime){
@@ -264,6 +265,7 @@ export function drawWorld(ctx,game,camera,background,{reducedMotion=false,input=
     if(!scene.hit){if(!Object.hasOwn(SWORDS,scene.skin)&&scene.skin!=='scrap-king')blade(ctx,p.x,p.y-30,-Math.PI/2,{length:34,color:scene.color,hand:false});else skinBlade(ctx,scene.skin,p.x,p.y-30,-Math.PI/2,{scale:1.1,hand:false});}
   }
   for(const e of game.effects){
+    if(drawShadowEffect(ctx,e,{reducedMotion}))continue;
     if(drawOathEffect(ctx,e,{reducedMotion}))continue;
     if(drawBossVFX(ctx,e,{reducedMotion}))continue;
     const progress=1-e.life/e.maxLife;

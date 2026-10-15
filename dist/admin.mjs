@@ -1,8 +1,8 @@
-import {HAMMER_LOOT} from './lightning.mjs?v=0.6.0';
-import {LOOT} from './core.mjs?v=0.6.0';
-import {SWORDS,SWORD_IDS,GOD_SWORD_IDS} from './swords.mjs?v=0.6.0';
+import {HAMMER_LOOT} from './lightning.mjs?v=0.7.0';
+import {LOOT} from './core.mjs?v=0.7.0';
+import {SWORDS,SWORD_IDS,GOD_SWORD_IDS} from './swords.mjs?v=0.7.0';
 // Local single-player tools, not server/account administration.
-export const ADMIN_ITEMS=[HAMMER_LOOT,...Object.entries(LOOT).flatMap(([rarity,items])=>items.map(i=>({...i,name:i.id==='blade'?'Dawnblade (classic)':i.name,rarity}))),...[...SWORD_IDS,...GOD_SWORD_IDS].map(id=>({id,skin:id,name:SWORDS[id].name,rarity:'rare',value:60})),{id:'scrap-king',name:'Scrap King · Admin',rarity:'admin',value:0}];
+export const ADMIN_ITEMS=[HAMMER_LOOT,...Object.entries(LOOT).flatMap(([rarity,items])=>items.map(i=>({...i,name:i.id==='blade'?'Dawnblade (classic)':i.name,rarity}))),...[...SWORD_IDS,...GOD_SWORD_IDS,'shadowfangs'].map(id=>({id,skin:id,name:SWORDS[id].name,rarity:'rare',value:60})),{id:'scrap-king',name:'Scrap King · Admin',rarity:'admin',value:0}];
 export class AdminTools{
   constructor(){this.unlocked=false;}
   unlock(password){this.unlocked=password==='3275';return this.unlocked;}
@@ -10,6 +10,7 @@ export class AdminTools{
   run(action,game){
     if(!this.unlocked||game.mode==='title'||game.player.hp<=0)return false;
     switch(action){
+      case 'shadow':if(game.inventory.some(i=>i.skin==='shadowfangs')){game.player.weaponSkin='shadowfangs';game.player.scrapKing=false;break;}return this.grant('shadowfangs',1,game);
       case 'equip':game.player.scrapKing=true;game.player.scrapKingOwned=true;break;
       case 'unequip':game.player.scrapKing=false;break;
       case 'heal':game.player.hp=100;game.player.potions=Math.max(3,game.player.potions);break;

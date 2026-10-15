@@ -1,4 +1,5 @@
 export const ULTIMATES={
+  shadowfangs:{title:'Arise · The Shadow Monarch',motif:'shadow',line:'Igris. Beru. All of you—arise.'},
   rimecrown:{title:'Rimewyrm’s Last Winter',motif:'ice',line:'The dragon’s winter answers your hand.'},
   oathbreaker:{title:'No More Binding Oaths',motif:'fang',line:'A promise freely chosen.'},
   solstice:{title:'A Million Dawns',motif:'sun',line:'Every stolen dawn goes home.'},

@@ -1,8 +1,8 @@
-import {buildUltimateSequence} from './ultimate-patterns.mjs?v=0.6.0';
-import {SWORDS} from './swords.mjs?v=0.6.0';
-import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.6.0';
-import {isSolid} from './world.mjs?v=0.6.0';
-import {ultimateKey} from './ultimates.mjs?v=0.6.0';
+import {buildUltimateSequence} from './ultimate-patterns.mjs?v=0.7.0';
+import {SWORDS} from './swords.mjs?v=0.7.0';
+import {SWORD_SWING,inFront,distance,moveBody} from './core.mjs?v=0.7.0';
+import {isSolid} from './world.mjs?v=0.7.0';
+import {ultimateKey} from './ultimates.mjs?v=0.7.0';
 
 export const ABILITY_KEYS=['sweep','guard','charge','mend','cyclone','stars'];
 export const ABILITY_LEVELS={sweep:1,guard:2,charge:3,mend:1,cyclone:2,stars:3};
@@ -13,6 +13,7 @@ const arc=o=>move('','arc',o),ring=o=>move('','ring',o),line=o=>move('','line',{
 // Every row is a fighting style, not a recolour. J/K/L and C/X/B keep their
 // existing unlocks; equipment changes their geometry, timing and effects.
 export const WEAPON_KITS={
+  shadowfangs:kit({reach:43,halfAngle:1,cooldown:.28,duration:.27,windup:.04,hitAt:.08,activeUntil:.13,phase:.12},['Monarch’s Crosscut','Shadow Mantle','Shadow Step','Dark Renewal','Ruler’s Grasp','Assassin’s Hunt'],[arc({radius:85,repeat:2}),ward({duration:5,invulnerable:.7}),dash({travel:105,invulnerable:.5}),heal({heal:40,charge:15}),field({radius:150,pull:100,duration:2,pulses:4}),move('','phantoms',{range:220,radius:45,repeat:5,scale:1.2})],move('Arise · The Shadow Monarch','army',{scale:2.5})),
   rimecrown:kit({reach:46,halfAngle:.32,slow:2,cooldown:.48},['Crown of Ice','Wyrm Scales','Frostcoil','Thawing Heart','Frozen Teeth','Winter’s Grasp'],[ring({radius:80,inner:28,freeze:.8}),ward({aura:'slow',duration:5}),dash({travel:100,trail:true,freeze:.6}),heal({heal:24,guard:2}),line({range:180,width:8,repeat:3,delay:.2,freeze:.5}),field({radius:65,offset:75,duration:4,pulses:6,slow:3})],move('Rimewyrm’s Last Winter','field',{radius:190,duration:4,pulses:7,freeze:.8,scale:.7})),
   oathbreaker:kit({reach:44,root:.25,halfAngle:.65},['Binding Chain','Broken Promise','Tribunal Step','Mercy Clause','Unbound Circle','Final Sentence'],[chain({range:140,jumps:3,root:1.2}),ward({duration:3,charge:20}),dash({travel:55,root:1.8,scale:2.8}),heal({heal:18,charge:15}),ring({radius:95,knock:180}),line({range:210,width:12,root:2,scale:3})],move('No More Binding Oaths','chain',{range:260,jumps:9,root:2.5,scale:4})),
   solstice:kit({reach:40,burn:2,heal:1,cooldown:.56},['Solar Eruption','Phoenix Mantle','Dawnflight','Returned Dawn','Flare Crown','Stolen Suns'],[move('','eruption',{radius:35,pulses:3,burn:3,scale:1}),ward({aura:'burn',heal:8}),dash({travel:85,trail:true,burn:2}),heal({heal:30,field:true,burn:2}),ring({radius:100,inner:35,burn:3,scale:2}),move('','meteors',{radius:40,pulses:4,range:180,burn:3})],move('A Million Dawns','eruption',{radius:60,pulses:6,burn:5,scale:1.8})),
@@ -110,6 +111,7 @@ export function tickWeaponMoves(g,dt){
   }
 }
 export function performUltimate(g,skin,{origin,facing,damage,color}){
+  if(skin==='shadowfangs')g.summonShadows(true);
   const actions=buildUltimateSequence(skin,{origin,facing,targets:living(g),history:g.memoryTrail??[]});
   for(const action of actions){
     if(action.restoreHealth!==undefined){g.player.hp=Math.min(100,Math.max(g.player.hp,action.restoreHealth));continue;}

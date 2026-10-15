@@ -142,3 +142,12 @@ Hold **U** or land hits/parries to charge, then press **V**. All 22 weapons now 
 | Tidemirror | Two closing tidal walls and a central burst |
 | Recollection | Recover recent lost health and replay attacks along your path |
 | Heavensfall | Descending columns and crossing heavenly blades |
+
+## Shadow Monarch’s Fangs (v0.7.0)
+Press **Z**, enter **3275**, and choose **Equip Shadow Monarch’s Fangs**. These admin-only dual daggers have curved black pixel blades, violet edges, 180 base damage, and six themed skills. They never appear in random loot. Once granted, they remain in your saved inventory and can be equipped with **E**.
+
+Press **N** with the Fangs equipped to summon **15 combat allies** for 45 seconds: **Igris, Beru, Bellion, Tusk, Iron, Tank, Kaisel, Greed, Jima**, and six shadow knights, archers and mages. Their silhouettes and roles differ: swords, claws, segmented blade, magic, shielding, bear knockback, wyvern blasts, axes and slowing attacks. They follow you through regions and strike nearby active enemies. N dismisses them; summoning has a 20-second cooldown. Switching weapons, falling, or the timer expiring returns them to the shadows. Menus pause the army. Allies never attack protected story characters or recharge the ultimate meter.
+
+Charge with **U** or use **Fill ultimate meter** in Admin, then press **V**. **Arise · The Shadow Monarch** has its own shadow-gate procession cutscene, three royal crosscuts, and refreshes the army to 60 seconds. It works at any potential level, requires the Fangs equipped, and refreshes rather than stacking more soldiers. All other weapons keep their own ultimates; there are now 23.
+
+The shadow names and theme are inspired by Sung Jinwoo’s army in *Solo Leveling* ([official Netmarble character discussion](https://ch.netmarble.com/Eng/Games/Detail?bbs_code=1018&post_seq=5430)). The in-game sprites and dagger SVG are authored in code for this game.

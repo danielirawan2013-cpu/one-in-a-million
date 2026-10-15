@@ -1,4 +1,4 @@
-import {BOSS_DESIGNS} from './boss-art.mjs?v=0.6.0';
+import {BOSS_DESIGNS} from './boss-art.mjs?v=0.7.0';
 const pixel=(c,color,x,y,w=2,h=2)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);};
 function line(c,color,x,y,xx,yy,w=1){const n=Math.max(1,Math.ceil(Math.max(Math.abs(xx-x),Math.abs(yy-y))));for(let i=0;i<=n;i++)pixel(c,color,x+(xx-x)*i/n,y+(yy-y)*i/n,w,w);}
 function mark(c,pattern,color,x,y,size,t){

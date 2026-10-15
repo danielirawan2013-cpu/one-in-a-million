@@ -1,4 +1,4 @@
-import {drawUniqueUltimate} from './ultimate-art.mjs?v=0.6.0';
+import {drawUniqueUltimate} from './ultimate-art.mjs?v=0.7.0';
 // Canvas-native artwork: integer scanlines keep every contour in real pixels.
 const rect=(c,color,x,y,w,h)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
 function poly(c,color,points){

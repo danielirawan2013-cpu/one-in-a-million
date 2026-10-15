@@ -1,15 +1,16 @@
-import {ULTIMATE_PATTERNS} from './ultimate-patterns.mjs?v=0.6.0';
-import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.6.0';
-import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.6.0';
-import {GOD_EPISODES} from './gods.mjs?v=0.6.0';
-import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.6.0';
-import {EPISODES} from './campaign.mjs?v=0.6.0';
-import {SWORDS} from './swords.mjs?v=0.6.0';
-import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.6.0';
-import {Adventure} from './engine.mjs?v=0.6.0';
-import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.6.0';
-import {WIDTH,HEIGHT} from './world.mjs?v=0.6.0';
-import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.6.0';
+import {hasShadowBlade,SHADOW_COMMANDERS} from './shadows.mjs?v=0.7.0';
+import {ULTIMATE_PATTERNS} from './ultimate-patterns.mjs?v=0.7.0';
+import {BETRAYAL,ROWAN_PHASES} from './betrayal.mjs?v=0.7.0';
+import {weaponKit,WEAPON_KITS,ABILITY_LEVELS} from './moves.mjs?v=0.7.0';
+import {GOD_EPISODES} from './gods.mjs?v=0.7.0';
+import {ULTIMATES,ultimateKey} from './ultimates.mjs?v=0.7.0';
+import {EPISODES} from './campaign.mjs?v=0.7.0';
+import {SWORDS} from './swords.mjs?v=0.7.0';
+import {AdminTools,ADMIN_ITEMS} from './admin.mjs?v=0.7.0';
+import {Adventure} from './engine.mjs?v=0.7.0';
+import {SAVE_KEY,validSave,clamp,distance} from './core.mjs?v=0.7.0';
+import {WIDTH,HEIGHT} from './world.mjs?v=0.7.0';
+import {groundCanvas,drawWorld,sprite,itemIcon} from './art.mjs?v=0.7.0';
 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay');
@@ -68,9 +69,9 @@ function updateUI(){
   $('power-action').disabled=game.mode!=='playing'||!stage||p.powerCd>0;
   $('power-label').textContent=!stage?'Power sleeping':p.powerCd>0?'Ready in '+Math.ceil(p.powerCd)+'s':'Heart burst';
   const ultSkin=ultimateKey(p),ult=ULTIMATES[ultSkin];
-  $('special-action').hidden=false;$('special-action').disabled=game.mode!=='playing'||p.specialCd>0||p.ultimateCharge<100||p.scrapKing&&!p.specialUnlocked||!p.scrapKing&&(!stage||!ult);
+  $('special-action').hidden=false;$('special-action').disabled=game.mode!=='playing'||p.specialCd>0||p.ultimateCharge<100||p.scrapKing&&!p.specialUnlocked||!p.scrapKing&&(!stage&&!SWORDS[p.weaponSkin]?.admin||!ult);
   $('special-label').textContent=(ult?.title??'Ultimate')+(p.specialCd>0?' · '+Math.ceil(p.specialCd)+'s':'');
-  $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing?'Unlock your first potential stage.':'V · '+ULTIMATE_PATTERNS[ultSkin].description;
+  $('special-action').title=p.ultimateCharge<100?'Hold U or land hits and parries to fill the ultimate meter.':p.scrapKing&&!p.specialUnlocked?'Unlock King’s Verdict in Admin.':!stage&&!p.scrapKing&&!SWORDS[p.weaponSkin]?.admin?'Unlock your first potential stage.':'V · '+ULTIMATE_PATTERNS[ultSkin].description;
   $('ultimate-fill').style.width=p.ultimateCharge+'%';$('ultimate-charge').textContent=Math.floor(p.ultimateCharge)+' / 100';$('channel-action').disabled=game.mode!=='playing'||p.ultimateCharge>=100;
 
   const titles=['A sleeping spark','The first spark','A growing flame','A heart awakened'];
@@ -95,6 +96,9 @@ function updateUI(){
     const b=$(kind+'-action'),cd=p[kind+'Cd'],move=weaponKit(p).moves[kind],name=move.name;b.title=name+' · '+move.cooldown+' second cooldown · changes with your weapon';b.disabled=game.mode!=='playing'||stage<level||cd>0;
     b.querySelector('span').textContent=stage<level?name+' · unlock '+level:cd>0?name+' · '+Math.ceil(cd)+'s':name;
   }
+  const shadowActive=game.shadowArmy.length>0;$('shadow-action').disabled=game.mode!=='playing'||!hasShadowBlade(game)||!shadowActive&&p.shadowCd>0;
+  $('shadow-action').querySelector('span').textContent=shadowActive?'Army · '+game.shadowArmy.length+' · '+Math.ceil(game.shadowRemaining)+'s':p.shadowCd>0&&hasShadowBlade(game)?'Arise · '+Math.ceil(p.shadowCd)+'s':'Arise · admin blade';
+  $('shadow-action').title='Shadow Monarch’s Fangs only. Summon '+SHADOW_COMMANDERS.map(s=>s.name).join(', ')+', and six shadow soldiers. Press N again to dismiss.';
   $('lightning-action').disabled=game.mode!=='playing'||p.scrapKing||p.weaponSkin!=='thunderhammer'||p.lightningCd>0;
   $('lightning-action').querySelector('span').textContent=p.weaponSkin!=='thunderhammer'?'Lightning · hammer':p.lightningCd>0?'Lightning · '+Math.ceil(p.lightningCd)+'s':'Lightning';
   $('parry-action').disabled=game.mode!=='playing'||p.parryCd>0;
@@ -108,7 +112,7 @@ function updateUI(){
 function updateInventory(){
   $('bag-count').textContent=game.inventory.length+' find'+(game.inventory.length===1?'':'s');
   const grouped=new Map();for(const item of game.inventory){const key=item.id+item.rarity;const existing=grouped.get(key);if(existing)existing.count++;else grouped.set(key,{...item,count:1});}
-  const el=$('inventory');el.innerHTML=grouped.size?[...grouped.values()].map(i=>`<div class="loot-row ${i.rarity}"><canvas width="24" height="24" data-item="${escapeHTML(i.id)}" aria-hidden="true"></canvas><div><strong>${escapeHTML(i.name)}</strong><small>${i.skin?(SWORDS[i.skin].god?SWORDS[i.skin].god+'’s guaranteed reward · ':i.skin==='thunderhammer'?'Secret boss reward · ':'Very rare sword · ')+SWORDS[i.skin].damage+' base damage':i.rarity==='trash'?'Junk · sell for '+i.value+' coins':i.rarity==='rare'?'Rare · equipped':i.id==='coins'?'Useful · coins collected':i.id==='potion'?'Useful · potion collected':'Useful · gear collected'}</small></div>${i.skin?'<button data-equip="'+escapeHTML(i.skin)+'" '+(game.player.weaponSkin===i.skin&&!game.player.scrapKing?'disabled':'')+'>'+ (game.player.weaponSkin===i.skin&&!game.player.scrapKing?'Equipped':'Equip')+'</button>':''}${i.count>1?'<span>×'+i.count+'</span>':''}</div>`).join(''):'<p class="empty-bag">A little room for a little luck.<br>Find a chest to fill your satchel.</p>';
+  const el=$('inventory');el.innerHTML=grouped.size?[...grouped.values()].map(i=>`<div class="loot-row ${i.rarity}"><canvas width="24" height="24" data-item="${escapeHTML(i.id)}" aria-hidden="true"></canvas><div><strong>${escapeHTML(i.name)}</strong><small>${i.skin?(SWORDS[i.skin].god?SWORDS[i.skin].god+'’s guaranteed reward · ':i.skin==='thunderhammer'?'Secret boss reward · ':SWORDS[i.skin].admin?'Admin weapon · ':'Very rare sword · ')+SWORDS[i.skin].damage+' base damage':i.rarity==='trash'?'Junk · sell for '+i.value+' coins':i.rarity==='rare'?'Rare · equipped':i.id==='coins'?'Useful · coins collected':i.id==='potion'?'Useful · potion collected':'Useful · gear collected'}</small></div>${i.skin?'<button data-equip="'+escapeHTML(i.skin)+'" '+(game.player.weaponSkin===i.skin&&!game.player.scrapKing?'disabled':'')+'>'+ (game.player.weaponSkin===i.skin&&!game.player.scrapKing?'Equipped':'Equip')+'</button>':''}${i.count>1?'<span>×'+i.count+'</span>':''}</div>`).join(''):'<p class="empty-bag">A little room for a little luck.<br>Find a chest to fill your satchel.</p>';
   el.querySelectorAll('canvas').forEach(c=>itemIcon(c,c.dataset.item));
 }
 function shopPanel(){
@@ -156,6 +160,8 @@ function event(e){
     case 'betrayal-aftermath':betrayalPanel('aftermath');save();break;
     case 'betrayal-complete':betrayalEnding();save();break;
     case 'started':adventureStarted=true;break;
+    case 'shadows-summoned':toast('Igris, Beru, Bellion, Tusk, Iron, Tank, Kaisel, Greed and Jima answer—with six shadow soldiers.',{title:'ARISE · '+e.count+' shadows'});save();break;
+    case 'shadows-dismissed':toast('Your army returns to your shadow.');break;
     case 'portal-open':toast('The thunder falls silent. A doorway is rising from the lake. Walk onto the new stone path and press G.',{title:'Something remembers you'});save();break;
     case 'divine-arrival':divinePanel(e.episode,true);game.defeated.add(game.area.id+'-visited');save();break;
     case 'divine-lore':divinePanel(e.episode);save();break;
@@ -210,7 +216,7 @@ function openInventory(){
   inventoryReturn={mode:game.mode,html:overlay.innerHTML};game.mode='inventory';
   const skins=[...new Set(game.inventory.filter(i=>i.skin).map(i=>i.skin))];
   const original=game.player.weapon>=12?'Dawnblade (classic)':game.player.weapon>=8?'Iron shortsword':'Battered sword';
-  showPanel('<div class="story-panel inventory-panel"><h2>Your weapons</h2><p>Choose a weapon to equip. E closes your inventory.</p><p>'+game.player.coins+' coins · '+game.player.potions+' potions · '+game.inventory.length+' find'+(game.inventory.length===1?'':'s')+'</p><div class="weapon-picker"><button data-inventory-equip="normal">'+original+'</button>'+skins.map(id=>'<button data-inventory-equip="'+id+'"><img src="assets/'+id+'.png" width="32" height="48" alt=""><span>'+escapeHTML(SWORDS[id].name)+'<small>'+SWORDS[id].damage+' base damage · '+escapeHTML(WEAPON_KITS[id].moves.sweep.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.guard.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.charge.name)+'</small><small>'+escapeHTML(WEAPON_KITS[id].ultimate.name)+'</small></span></button>').join('')+(game.player.scrapKingOwned?'<button data-inventory-equip="scrap-king"><img src="assets/scrap-king.png" width="32" height="48" alt=""><span>Scrap King<small>999 damage · Admin</small></span></button>':'')+'</div><button data-action="inventory-close">Back to game</button></div>');refreshWeaponPicker();updateUI();
+  showPanel('<div class="story-panel inventory-panel"><h2>Your weapons</h2><p>Choose a weapon to equip. E closes your inventory.</p><p>'+game.player.coins+' coins · '+game.player.potions+' potions · '+game.inventory.length+' find'+(game.inventory.length===1?'':'s')+'</p><div class="weapon-picker"><button data-inventory-equip="normal">'+original+'</button>'+skins.map(id=>'<button data-inventory-equip="'+id+'"><img src="assets/'+(SWORDS[id].asset??id+'.png')+'" width="32" height="48" alt=""><span>'+escapeHTML(SWORDS[id].name)+'<small>'+SWORDS[id].damage+' base damage · '+escapeHTML(WEAPON_KITS[id].moves.sweep.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.guard.name)+' / '+escapeHTML(WEAPON_KITS[id].moves.charge.name)+'</small><small>'+escapeHTML(WEAPON_KITS[id].ultimate.name)+'</small></span></button>').join('')+(game.player.scrapKingOwned?'<button data-inventory-equip="scrap-king"><img src="assets/scrap-king.png" width="32" height="48" alt=""><span>Scrap King<small>999 damage · Admin</small></span></button>':'')+'</div><button data-action="inventory-close">Back to game</button></div>');refreshWeaponPicker();updateUI();
 }
 function refreshWeaponPicker(){for(const b of overlay.querySelectorAll('[data-inventory-equip]')){const equipped=b.dataset.inventoryEquip==='scrap-king'?game.player.scrapKing:!game.player.scrapKing&&(b.dataset.inventoryEquip==='normal'?!game.player.weaponSkin:game.player.weaponSkin===b.dataset.inventoryEquip);b.disabled=equipped;b.setAttribute('aria-pressed',String(equipped));}}
 function closeInventory(){const previous=inventoryReturn;inventoryReturn=null;game.mode=previous.mode;if(previous.html)showPanel(previous.html);else closePanel();updateUI();}
@@ -222,9 +228,9 @@ function openAdmin(){
 function adminPanel(refresh=false){
   if(refresh&&adminTools.unlocked&&overlay.querySelector('.admin-panel')){
     const disabled=!adventureStarted||adminReturn.mode==='dead';
-    for(const action of ['equip','unequip','heal','coins','potential','special','charge']){
+    for(const action of ['equip','shadow','unequip','heal','coins','potential','special','charge']){
       const button=overlay.querySelector('[data-action="admin-'+action+'"]');
-      button.disabled=disabled||(action==='equip'&&game.player.scrapKing)||(action==='unequip'&&!game.player.scrapKing)||(action==='potential'&&game.stage===3)||(action==='special'&&game.player.specialUnlocked);
+      button.disabled=disabled||(action==='shadow'&&hasShadowBlade(game))||(action==='equip'&&game.player.scrapKing)||(action==='unequip'&&!game.player.scrapKing)||(action==='potential'&&game.stage===3)||(action==='special'&&game.player.specialUnlocked);
     }
     overlay.querySelector('.admin-feedback').textContent=adminNotice;
     overlay.querySelector('.admin-note').textContent=(game.player.scrapKing?'Scrap King is equipped. ':'')+(game.player.specialUnlocked?'Press V with Scrap King for King’s Verdict. ':'')+'Tools affect only your save on this device.';
@@ -234,7 +240,7 @@ function adminPanel(refresh=false){
     showPanel(`<div class="story-panel admin-panel"><h2>Admin panel</h2><p>Enter your admin password.</p><form id="admin-login"><label for="admin-password">Password</label><input id="admin-password" type="password" inputmode="numeric" autocomplete="off" maxlength="32" required aria-describedby="admin-error"><p id="admin-error" role="alert" hidden></p><div class="buttons"><button type="submit">Unlock admin tools</button><button type="button" data-action="admin-close" class="secondary">Back to game</button></div></form><p class="admin-note">Tools affect only your save on this device.</p></div>`);return;
   }
   const unavailable=!adventureStarted||adminReturn.mode==='dead',disabled=unavailable?'disabled':'';
-  showPanel(`<div class="story-panel admin-panel"><h2>Admin panel</h2><div class="admin-weapon"><img src="assets/scrap-king.png" width="32" height="48" alt="Scrap King, a steel cleaver with copper fittings"><div><strong>Scrap King</strong><p>999 damage · Admin sword</p></div></div>${unavailable?'<p>Begin or continue your adventure first. If Pip has fallen, bring him home first.</p>':''}<div class="admin-tools"><button data-action="admin-equip" ${disabled||game.player.scrapKing?'disabled':''}>Equip Scrap King</button><button data-action="admin-unequip" class="secondary" ${disabled||!game.player.scrapKing?'disabled':''}>Use normal sword</button><button data-action="admin-heal" ${disabled}>Heal + refill potions</button><button data-action="admin-coins" ${disabled}>Add 100 coins</button><button data-action="admin-potential" ${disabled||game.stage===3?'disabled':''}>Unlock full potential</button><button data-action="admin-charge" ${disabled}>Fill ultimate meter</button><button data-action="admin-special" ${disabled||game.player.specialUnlocked?'disabled':''}>Unlock King’s Verdict</button></div><form id="admin-grant"><label for="admin-item">Give yourself an item</label><div class="admin-grant-fields"><select id="admin-item" ${disabled}>${ADMIN_ITEMS.map(i=>'<option value="'+i.id+'">'+escapeHTML(i.name)+'</option>').join('')}</select><input id="admin-quantity" type="number" min="1" max="99" value="1" required aria-label="Item quantity" ${disabled}></div><button type="submit" ${disabled}>Give item</button></form><p class="admin-feedback" role="status">${escapeHTML(adminNotice)}</p><p class="admin-note">${game.player.scrapKing?'Scrap King is equipped. ':''}${game.player.specialUnlocked?'Press V with Scrap King for King’s Verdict. ':''}Tools affect only your save on this device.</p><div class="buttons"><button data-action="admin-close">Back to game</button><button data-action="admin-lock" class="secondary">Lock panel</button></div></div>`);
+  showPanel(`<div class="story-panel admin-panel"><h2>Admin panel</h2><div class="admin-weapon"><img src="assets/scrap-king.png" width="32" height="48" alt="Scrap King, a steel cleaver with copper fittings"><div><strong>Scrap King</strong><p>999 damage · Admin sword</p></div></div><div class="admin-weapon"><img src="assets/shadowfangs.svg" width="32" height="48" alt="A curved black dagger with a violet edge"><div><strong>Shadow Monarch’s Fangs</strong><p>Dual admin daggers · N: Arise · V: Shadow Monarch</p></div></div><p>Igris, Beru, Bellion, Tusk, Iron, Tank, Kaisel, Greed, Jima, and six shadow soldiers fight beside you.</p>${unavailable?'<p>Begin or continue your adventure first. If Pip has fallen, bring him home first.</p>':''}<div class="admin-tools"><button data-action="admin-shadow" ${disabled||hasShadowBlade(game)?'disabled':''}>Equip Shadow Monarch’s Fangs</button><button data-action="admin-equip" ${disabled||game.player.scrapKing?'disabled':''}>Equip Scrap King</button><button data-action="admin-unequip" class="secondary" ${disabled||!game.player.scrapKing?'disabled':''}>Use normal sword</button><button data-action="admin-heal" ${disabled}>Heal + refill potions</button><button data-action="admin-coins" ${disabled}>Add 100 coins</button><button data-action="admin-potential" ${disabled||game.stage===3?'disabled':''}>Unlock full potential</button><button data-action="admin-charge" ${disabled}>Fill ultimate meter</button><button data-action="admin-special" ${disabled||game.player.specialUnlocked?'disabled':''}>Unlock King’s Verdict</button></div><form id="admin-grant"><label for="admin-item">Give yourself an item</label><div class="admin-grant-fields"><select id="admin-item" ${disabled}>${ADMIN_ITEMS.map(i=>'<option value="'+i.id+'">'+escapeHTML(i.name)+'</option>').join('')}</select><input id="admin-quantity" type="number" min="1" max="99" value="1" required aria-label="Item quantity" ${disabled}></div><button type="submit" ${disabled}>Give item</button></form><p class="admin-feedback" role="status">${escapeHTML(adminNotice)}</p><p class="admin-note">${game.player.scrapKing?'Scrap King is equipped. ':''}${game.player.specialUnlocked?'Press V with Scrap King for King’s Verdict. ':''}Tools affect only your save on this device.</p><div class="buttons"><button data-action="admin-close">Back to game</button><button data-action="admin-lock" class="secondary">Lock panel</button></div></div>`);
 }
 function closeAdmin(){
   const previous=adminReturn;adminReturn=null;game.mode=previous.mode;
@@ -255,7 +261,7 @@ function pause(){
 function help(){
   if(game.mode==='help'||game.mode==='admin'||game.mode==='inventory')return;
   previousMode=game.mode;game.mode='help';
-  showPanel(`<div class="story-panel instructions"><h2>A little field guide</h2><p>Rescue Uncle Bones, discover your customer’s next bounty, and protect Grandma, then save the dungeon heart across eight chapters. Defeat the secret lightning god to open a lake portal into three more chapters, with six gods and the truth of Pip’s banishment.</p><dl><dt><kbd>W A S D</kbd> / Arrows</dt><dd>Move and face your next target.</dd><dt><kbd>SPACE</kbd></dt><dd>Wind up, strike forward, and recover. Hold for repeated swings. Most strikes land in front. Each weapon has its own reach, speed and effect: fire burns, ice slows, lightning chains, and Bloodmoon steals health.</dd><dt><kbd>E</kbd></dt><dd>Open your inventory and change weapons.</dd><dt><kbd>G</kbd></dt><dd>Open chests, talk, and use doorways.</dd><dt><kbd>SHIFT</kbd></dt><dd>Dodge an enemy’s wind-up. You can cancel your own swing to dodge.</dd><dt><kbd>F</kbd></dt><dd>Parry just before a strike. A perfect block staggers the enemy and strengthens your next swing.</dd><dt><kbd>Z</kbd></dt><dd>Open the admin panel.</dd><dt><kbd>V</kbd></dt><dd>Use your sword’s ultimate when the meter is full. Scrap King’s King’s Verdict requires an Admin unlock.</dd><dt><kbd>R</kbd></dt><dd>Heart burst. Unlock it by defeating the practice armour.</dd><dt><kbd>U</kbd></dt><dd>Hold to charge your ultimate while standing still. Hits and parries charge it too.</dd><dt><kbd>J K L</kbd></dt><dd>Your weapon’s attack, defence and movement skills unlock at potential levels 1, 2 and 3. Equip another sword to change all six moves.</dd><dt><kbd>C X B</kbd></dt><dd>Your weapon’s recovery, area and finisher skills unlock at the same three levels. The ability dock shows their names.</dd><dt><kbd>T</kbd></dt><dd>Summon lightning with Thunderwake hammer.</dd><dt><kbd>H</kbd></dt><dd>Drink a potion to heal 40 health.</dd><dt><kbd>ESC</kbd></dt><dd>Pause or resume.</dd></dl><p>Wooden chests: 5% rare · Iron: 15% rare · Golden: 30% rare. Named swords are very rare: 0.15% wood, 0.45% iron, 0.9% gold for any of the eleven skins. Walk to the family-shop door and press G to enter. Sell trash and buy mystery chests inside. Touch controls work too.</p><button data-action="help-close">Got it.</button></div>`);updateUI();
+  showPanel(`<div class="story-panel instructions"><h2>A little field guide</h2><p>Rescue Uncle Bones, discover your customer’s next bounty, and protect Grandma, then save the dungeon heart across eight chapters. Defeat the secret lightning god to open a lake portal into three more chapters, with six gods and the truth of Pip’s banishment.</p><dl><dt><kbd>W A S D</kbd> / Arrows</dt><dd>Move and face your next target.</dd><dt><kbd>SPACE</kbd></dt><dd>Wind up, strike forward, and recover. Hold for repeated swings. Most strikes land in front. Each weapon has its own reach, speed and effect: fire burns, ice slows, lightning chains, and Bloodmoon steals health.</dd><dt><kbd>E</kbd></dt><dd>Open your inventory and change weapons.</dd><dt><kbd>G</kbd></dt><dd>Open chests, talk, and use doorways.</dd><dt><kbd>SHIFT</kbd></dt><dd>Dodge an enemy’s wind-up. You can cancel your own swing to dodge.</dd><dt><kbd>F</kbd></dt><dd>Parry just before a strike. A perfect block staggers the enemy and strengthens your next swing.</dd><dt><kbd>Z</kbd></dt><dd>Open the admin panel.</dd><dt><kbd>V</kbd></dt><dd>Use your sword’s ultimate when the meter is full. Scrap King’s King’s Verdict requires an Admin unlock.</dd><dt><kbd>R</kbd></dt><dd>Heart burst. Unlock it by defeating the practice armour.</dd><dt><kbd>U</kbd></dt><dd>Hold to charge your ultimate while standing still. Hits and parries charge it too.</dd><dt><kbd>J K L</kbd></dt><dd>Your weapon’s attack, defence and movement skills unlock at potential levels 1, 2 and 3. Equip another sword to change all six moves.</dd><dt><kbd>C X B</kbd></dt><dd>Your weapon’s recovery, area and finisher skills unlock at the same three levels. The ability dock shows their names.</dd><dt><kbd>N</kbd></dt><dd>With the admin Shadow Monarch’s Fangs equipped, summon your shadow army. Press again to dismiss. V calls the whole army in its own cutscene.</dd><dt><kbd>T</kbd></dt><dd>Summon lightning with Thunderwake hammer.</dd><dt><kbd>H</kbd></dt><dd>Drink a potion to heal 40 health.</dd><dt><kbd>ESC</kbd></dt><dd>Pause or resume.</dd></dl><p>Wooden chests: 5% rare · Iron: 15% rare · Golden: 30% rare. Named swords are very rare: 0.15% wood, 0.45% iron, 0.9% gold for any of the eleven skins. Walk to the family-shop door and press G to enter. Sell trash and buy mystery chests inside. Touch controls work too.</p><button data-action="help-close">Got it.</button></div>`);updateUI();
 }
 overlay.addEventListener('click',e=>{
   const choice=e.target.closest('[data-inventory-equip]');
@@ -280,7 +286,7 @@ overlay.addEventListener('click',e=>{
     case 'inventory-close':closeInventory();break;
     case 'admin-close':closeAdmin();break;
     case 'admin-lock':adminTools.lock();adminPanel();break;
-    case 'admin-equip':case 'admin-unequip':case 'admin-heal':case 'admin-coins':case 'admin-potential':case 'admin-special':case 'admin-charge':
+    case 'admin-shadow':case 'admin-equip':case 'admin-unequip':case 'admin-heal':case 'admin-coins':case 'admin-potential':case 'admin-special':case 'admin-charge':
       if(game.mode==='admin'&&adventureStarted&&adminTools.run(button.dataset.action.slice(6),game)){adminNotice=button.textContent+' — done.';save();updateInventory();adminPanel(true);updateUI();}break;
     case 'start':game.start();closePanel();save();break;
     case 'continue':if(saved){game.restore(saved);}break;
@@ -315,7 +321,7 @@ document.addEventListener('keydown',e=>{
   if(movement[e.code]){e.preventDefault();input[movement[e.code]]=true;}
   if(e.code==='KeyU'){e.preventDefault();input.charge=true;}
   if(e.code==='Space'){e.preventDefault();input.attack=true;game.attack();}
-  if(!e.repeat){if(e.code==='KeyG'){e.preventDefault();game.interact();}if(e.code==='KeyT'){e.preventDefault();game.lightning();}if(e.code==='KeyC'){e.preventDefault();game.ability('mend');}if(e.code==='KeyX'){e.preventDefault();game.ability('cyclone');}if(e.code==='KeyB'){e.preventDefault();game.ability('stars');}if(e.code==='KeyJ'){e.preventDefault();game.ability('sweep');}if(e.code==='KeyK'){e.preventDefault();game.ability('guard');}if(e.code==='KeyL'){e.preventDefault();game.ability('charge');}if(e.code==='KeyF'){e.preventDefault();game.parry();}if(e.code==='KeyR'){e.preventDefault();game.power();}if(e.code==='KeyV'){e.preventDefault();game.special({reducedMotion});}if(e.code==='KeyH'){e.preventDefault();game.heal();}if(e.code.startsWith('Shift')){e.preventDefault();game.dodge();}}
+  if(!e.repeat){if(e.code==='KeyN'){e.preventDefault();game.summonShadows();}if(e.code==='KeyG'){e.preventDefault();game.interact();}if(e.code==='KeyT'){e.preventDefault();game.lightning();}if(e.code==='KeyC'){e.preventDefault();game.ability('mend');}if(e.code==='KeyX'){e.preventDefault();game.ability('cyclone');}if(e.code==='KeyB'){e.preventDefault();game.ability('stars');}if(e.code==='KeyJ'){e.preventDefault();game.ability('sweep');}if(e.code==='KeyK'){e.preventDefault();game.ability('guard');}if(e.code==='KeyL'){e.preventDefault();game.ability('charge');}if(e.code==='KeyF'){e.preventDefault();game.parry();}if(e.code==='KeyR'){e.preventDefault();game.power();}if(e.code==='KeyV'){e.preventDefault();game.special({reducedMotion});}if(e.code==='KeyH'){e.preventDefault();game.heal();}if(e.code.startsWith('Shift')){e.preventDefault();game.dodge();}}
 });
 document.addEventListener('keyup',e=>{if(movement[e.code])input[movement[e.code]]=false;if(e.code==='Space')input.attack=false;if(e.code==='KeyU')input.charge=false;});
 window.addEventListener('blur',()=>{clearInput();if(game.mode==='playing')pause();});
@@ -333,6 +339,7 @@ $('special-action').onclick=()=>{game.special({reducedMotion});canvas.focus({pre
 $('channel-action').addEventListener('pointerdown',e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);if(game.mode==='playing')input.charge=true;});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])$('channel-action').addEventListener(event,()=>input.charge=false);
 $('inventory-toggle').onclick=()=>game.mode==='inventory'?closeInventory():openInventory();
+$('shadow-action').onclick=()=>{game.summonShadows();canvas.focus({preventScroll:true});};
 $('lightning-action').onclick=()=>{game.lightning();canvas.focus({preventScroll:true});};
 $('parry-action').onclick=()=>{game.parry();canvas.focus({preventScroll:true});};
 for(const kind of ['sweep','guard','charge','mend','cyclone','stars'])$(kind+'-action').onclick=()=>{game.ability(kind);canvas.focus({preventScroll:true});};

@@ -1,5 +1,6 @@
 // One authored sequence per weapon. Coordinates are locked when V is pressed.
 export const ULTIMATE_PATTERNS={
+ shadowfangs:{duration:3.4,impact:.53,description:'Arise: summon fifteen shadows, then lead a royal crosscut. N summons or dismisses your army.'},
  battered:{duration:1.9,impact:.53,description:'Three expanding shockwaves around Pip.'},
  ironshort:{duration:2.1,impact:.62,description:'A narrow piercing thrust, followed by crossing steel cuts. Aim forward.'},
  classicdawn:{duration:2.5,impact:.6,description:'Restore 35 health and raise three protective rings around Pip.'},
@@ -32,6 +33,7 @@ export function buildUltimateSequence(skin,{origin,facing,targets=[],history=[]}
  const marks=targets.filter(e=>!e.dead&&!e.dormant&&Math.hypot(e.x-o.x,e.y-o.y)<=260).sort((a,b)=>Math.hypot(a.x-o.x,a.y-o.y)-Math.hypot(b.x-o.x,b.y-o.y)).slice(0,6);
  const points=marks.length?marks.map(e=>({x:e.x,y:e.y})):Array.from({length:3},(_,i)=>at(55+i*35,(i-1)*35));
  switch(skin){
+ case 'shadowfangs':for(let i=0;i<3;i++)add('arc',{radius:120+i*45,halfAngle:1.1,shock:.6},i*.28,o,turn((i-1)*.4),.35);break;
  case 'battered':for(let i=0;i<3;i++)add('ring',{radius:48+i*50,knock:80},i*.23,o,f,.42);break;
  case 'ironshort':add('line',{range:245,width:12,knock:140},0,o,f,.8);for(const a of [-.32,.32])add('line',{range:175,width:10},.27,o,turn(a),.35);break;
  case 'classicdawn':add('heal',{heal:35},0,o,f,0);for(let i=0;i<3;i++)add('ring',{radius:55+i*38,guard:2},.12+i*.3,o,f,.34);break;

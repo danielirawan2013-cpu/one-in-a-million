@@ -1,3 +1,4 @@
+import {drawShadowProcession} from './shadow-art.mjs?v=0.7.0';
 // Distinct compositions and movement for every ultimate; no full-screen flashes.
 const px=(c,col,x,y,w=2,h=2)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
 function ln(c,col,x,y,xx,yy,w=1){const n=Math.max(1,Math.ceil(Math.max(Math.abs(xx-x),Math.abs(yy-y))));for(let i=0;i<=n;i++)px(c,col,x+(xx-x)*i/n,y+(yy-y)*i/n,w,w);}
@@ -19,6 +20,7 @@ export function drawUniqueUltimate(c,game,{reducedMotion=false,drawDragon}={}){
  const points=s.targets?.length?s.targets.slice(0,6):[at(70),at(100,-40),at(100,40)];
  c.save();c.globalAlpha=reducedMotion?.7:.86;
  switch(key){
+ case 'shadowfangs':drawShadowProcession(c,s,{reducedMotion});break;
  case 'battered':{
   const r=18+v*28;px(c,'#7f6f58',x-r*.5,y-60,r,35);px(c,col,x-r*.5+3,y-58,r-6,23);for(let i=0;i<4;i++)px(c,white,x-r*.5+5+i*r/5,y-62,r/6,10);
   for(let i=0;i<3;i++)ring(c,col,x,y,20+(s.hit?out*120:v*18)+i*12,.6);break;

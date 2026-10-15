@@ -6,8 +6,8 @@
   <meta name="description" content="A tiny human. A million-to-one gift. Explore a pixel dungeon, find unpredictable loot, and unlock your strength to save your monster family.">
   <title>One in a Million — Pip's adventure</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=0.6.0">
-  <script type="module" src="game.mjs?v=0.6.0"></script>
+  <link rel="stylesheet" href="style.css?v=0.7.0">
+  <script type="module" src="game.mjs?v=0.7.0"></script>
 </head>
 <body>
 <svg class="symbol-bank" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -30,7 +30,7 @@
     <section class="play-area" aria-label="Dungeon adventure">
       <div class="location-bar"><div><span class="location-dot"></span><strong id="location">Bramble Hollow</strong><span id="location-note">Home, sweet slightly haunted home.</span></div><span id="chapter-label">Chapter one</span></div>
       <div class="viewport" id="viewport">
-        <div id="duel-status" class="duel-status" hidden><span id="duel-title"></span><progress id="duel-health" value="250" max="250"></progress></div><canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E for inventory, G to interact, R for power, F to parry, Z for admin, V for your ultimate, U to charge, Shift to dodge, H to heal."></canvas>
+        <div id="duel-status" class="duel-status" hidden><span id="duel-title"></span><progress id="duel-health" value="250" max="250"></progress></div><canvas id="game" width="480" height="304" tabindex="0" aria-label="Pixel adventure. Move with W A S D or arrow keys. Space to attack, E for inventory, G to interact, R for power, F to parry, Z for admin, N for shadow army, V for your ultimate, U to charge, Shift to dodge, H to heal."></canvas>
         <div class="hud" aria-label="Player status"><div class="health"><svg><use href="#i-heart"/></svg><div class="health-track"><div id="health-fill"></div></div><span id="health-text">100 / 100</span></div><div class="money"><svg><use href="#i-coin"/></svg><span id="coins">0</span></div></div>
         <div id="interact-hint" class="interaction" hidden><kbd>G</kbd><span></span></div>
         <div id="low-health-warning" class="low-health-warning" role="status" aria-live="polite" hidden><svg aria-hidden="true"><use href="#i-heart"/></svg><span id="low-health-message"></span><button id="low-health-heal" type="button">Use potion <kbd>H</kbd></button></div>
@@ -38,7 +38,7 @@
         <div id="overlay" class="scene-overlay"></div>
         <div class="scene-caption" id="scene-caption">Some heroes start smaller than others.</div>
       </div>
-      <nav class="ability-bar" aria-label="Abilities and keyboard shortcuts"><button id="parry-action"><kbd>F</kbd><span>Parry</span></button><button id="sweep-action"><kbd>J</kbd><span>Sweep · unlock 1</span></button><button id="guard-action"><kbd>K</kbd><span>Guard · unlock 2</span></button><button id="charge-action"><kbd>L</kbd><span>Rush · unlock 3</span></button><button id="mend-action"><kbd>C</kbd><span>Mending Light · unlock 1</span></button><button id="cyclone-action"><kbd>X</kbd><span>Cyclone · unlock 2</span></button><button id="stars-action"><kbd>B</kbd><span>Starcall · unlock 3</span></button><button id="lightning-action"><kbd>T</kbd><span>Lightning · hammer</span></button><button id="special-action" hidden><svg><use href="#i-sword"/></svg><kbd>V</kbd><span id="special-label">King’s Verdict</span></button><button id="power-action" disabled><svg><use href="#i-spark"/></svg><kbd>R</kbd><span id="power-label">Power sleeping</span></button><button id="heal-action"><svg><use href="#i-potion"/></svg><kbd>H</kbd><span id="potion-label">3 potions</span></button><div class="ultimate-meter"><div><strong>Ultimate</strong><span id="ultimate-charge">0 / 100</span></div><div class="ultimate-track"><span id="ultimate-fill"></span></div><button id="channel-action"><kbd>U</kbd><span>Hold to charge</span></button></div></nav><div class="action-strip"><span><kbd>W A S D</kbd> Move</span><span><kbd>SPACE</kbd> Attack</span><span><kbd>G</kbd> Interact</span><span><kbd>SHIFT</kbd> Dodge</span><span><kbd>F</kbd> Parry</span><span><kbd>Z</kbd> Admin</span></div>
+      <nav class="ability-bar" aria-label="Abilities and keyboard shortcuts"><button id="parry-action"><kbd>F</kbd><span>Parry</span></button><button id="sweep-action"><kbd>J</kbd><span>Sweep · unlock 1</span></button><button id="guard-action"><kbd>K</kbd><span>Guard · unlock 2</span></button><button id="charge-action"><kbd>L</kbd><span>Rush · unlock 3</span></button><button id="mend-action"><kbd>C</kbd><span>Mending Light · unlock 1</span></button><button id="cyclone-action"><kbd>X</kbd><span>Cyclone · unlock 2</span></button><button id="stars-action"><kbd>B</kbd><span>Starcall · unlock 3</span></button><button id="lightning-action"><kbd>T</kbd><span>Lightning · hammer</span></button><button id="shadow-action"><kbd>N</kbd><span>Arise · admin blade</span></button><button id="special-action" hidden><svg><use href="#i-sword"/></svg><kbd>V</kbd><span id="special-label">King’s Verdict</span></button><button id="power-action" disabled><svg><use href="#i-spark"/></svg><kbd>R</kbd><span id="power-label">Power sleeping</span></button><button id="heal-action"><svg><use href="#i-potion"/></svg><kbd>H</kbd><span id="potion-label">3 potions</span></button><div class="ultimate-meter"><div><strong>Ultimate</strong><span id="ultimate-charge">0 / 100</span></div><div class="ultimate-track"><span id="ultimate-fill"></span></div><button id="channel-action"><kbd>U</kbd><span>Hold to charge</span></button></div></nav><div class="action-strip"><span><kbd>W A S D</kbd> Move</span><span><kbd>SPACE</kbd> Attack</span><span><kbd>G</kbd> Interact</span><span><kbd>SHIFT</kbd> Dodge</span><span><kbd>F</kbd> Parry</span><span><kbd>Z</kbd> Admin</span></div>
       <div class="touch-controls" aria-label="Touch controls"><div class="dpad"><button data-move="up" aria-label="Move up"><svg><use href="#i-arrow"/></svg></button><button data-move="left" aria-label="Move left"><svg><use href="#i-arrow"/></svg></button><button data-move="down" aria-label="Move down"><svg><use href="#i-arrow"/></svg></button><button data-move="right" aria-label="Move right"><svg><use href="#i-arrow"/></svg></button></div><div class="touch-actions"><button id="touch-dodge">Dodge</button><button id="touch-parry">Parry</button><button id="touch-interact">Use</button><button id="touch-attack" class="attack-button"><svg><use href="#i-sword"/></svg>Attack</button></div></div>
       <p class="save-note" id="save-note">Your adventure saves on this device. Take your time.</p>
     </section>
@@ -50,7 +50,7 @@
       <section class="field-note"><h2>A note to self</h2><p id="field-note">“If I don’t come back, someone please water Grandma’s gold.”</p></section>
     </aside>
   </main>
-  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Eleven chapters + betrayal epilogue · v0.6.0</span></footer>
+  <footer><span>A human hero. A monster family. A million-to-one chance.</span><span>Eleven chapters + betrayal epilogue · v0.7.0</span></footer>
 </div>
 <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
 
